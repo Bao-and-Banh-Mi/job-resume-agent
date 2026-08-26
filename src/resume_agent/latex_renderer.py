@@ -12,6 +12,7 @@ handled; it is exercised by the LaTeX-escaping tests.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from .models import Draft, DraftEntry, DraftSection, SkillGroup
@@ -182,11 +183,12 @@ def _render_header(draft: Draft) -> str:
 def _load_template_preamble(template_path: Path) -> str:
     """Extract everything up to (but not including) ``\\begin{document}``."""
     text = template_path.read_text(encoding="utf-8")
-    marker = "\\begin{document}"
-    idx = text.find(marker)
-    if idx == -1:
+    # Match the actual document boundary, not a comment that happens to
+    # mention ``\\begin{document}`` in the template instructions.
+    match = re.search(r"(?m)^\\begin\{document\}\s*$", text)
+    if match is None:
         raise ValueError(f"template {template_path} is missing \\begin{{document}}")
-    return text[:idx]
+    return text[: match.start()]
 
 
 def render_draft(draft: Draft, template_path: str | Path) -> str:
