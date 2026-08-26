@@ -1,0 +1,22 @@
+# Generated LaTeX/PDF artifacts
+build/
+*.aux
+*.log
+*.out
+*.pdf
+
+# Local app/runtime data
+.env
+.env.*
+.venv/
+__pycache__/
+node_modules/
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Private, PII-containing resume source and any user-specific inputs
+.private/

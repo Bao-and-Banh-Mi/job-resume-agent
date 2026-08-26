@@ -1,0 +1,181 @@
+%------------------------------------------
+% Resume Template (public)
+% Base template: Abhishek Jha (https://github.com/abhijhacodes/latex-resume)
+%
+% This is a PII-free template. All personal identifiers in the header are
+% declared as macros below so a private overlay (e.g. .private/*.tex) can
+% \renewcommand them without touching the layout. Body sections use generic
+% placeholder entries; replace them with content from your own experience
+% bank. The macros defined below (\resumeItem, \resumeSubheading, etc.) are
+% the contract the renderer relies on -- do not rename them.
+%------------------------------------------
+
+\documentclass[letterpaper,11pt]{article}
+
+% --------------- PACKAGES -----------------------
+\usepackage{latexsym}
+\usepackage{amsmath}
+\usepackage[empty]{fullpage}
+\usepackage{titlesec}
+\usepackage{marvosym}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{verbatim}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fancyhdr}
+\usepackage[english]{babel}
+\usepackage{tabularx}
+\usepackage{fontawesome}
+\usepackage[dvipsnames]{xcolor}
+\input{glyphtounicode}
+\usepackage[normalem]{ulem}
+
+% ---------- RESUME FORMAT ADJUSTMENTS -------------
+\addtolength{\oddsidemargin}{-0.5in}
+\addtolength{\evensidemargin}{-0.5in}
+\addtolength{\textwidth}{1in}
+\addtolength{\topmargin}{-.5in}
+\addtolength{\textheight}{1.32in}
+
+\urlstyle{same}
+
+\raggedbottom
+\raggedright
+\setlength{\tabcolsep}{0in}
+
+% GAP AROUND SECTION HEADERS -- {left}{above}{below}
+\titlespacing*{\section}{0pt}{7pt}{4pt}
+\titleformat{\section}{
+  \scshape\raggedright\large
+}{}{0em}{}[\color{black}\titlerule]
+
+\pdfgentounicode=1
+
+\newcommand{\resumeItem}[1]{\item\small{#1}}
+
+\newcommand{\resumeSubheading}[4]{
+  \item
+    \begin{tabular*}{0.97\textwidth}[t]{l@{\extracolsep{\fill}}r}
+      \textbf{#1} & #2 \\
+      {\small\textit{#3}} & {\small\textit{#4}} \\
+    \end{tabular*}\vspace{-2pt}
+}
+
+
+\newcommand{\resumeSubSubheading}[2]{
+    \item
+    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+      \textit{\small#1} & \textit{\small #2} \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeProjectHeading}[2]{
+    \item
+    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+      \small#1 & #2 \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeSubItem}[1]{\resumeItem{#1}\vspace{-4pt}}
+
+\renewcommand\labelitemii{$\vcenter{\hbox{\tiny$\bullet$}}$}
+
+% Outer list: one item per job/project. itemsep controls the GAP BETWEEN ENTRIES.
+\newcommand{\resumeSubHeadingListStart}{%
+  \begin{itemize}[leftmargin=0.15in, label={}, topsep=2pt, itemsep=2pt, parsep=0pt]}
+\newcommand{\resumeSubHeadingListEnd}{\end{itemize}}
+% Inner list: the bullets. itemsep controls the GAP BETWEEN BULLETS.
+\newcommand{\resumeItemListStart}{%
+  \begin{itemize}[leftmargin=0.2in, topsep=3pt, itemsep=2pt, parsep=0pt]}
+\newcommand{\resumeItemListEnd}{\end{itemize}}
+
+% ---------- PERSONAL IDENTIFIERS (override in a private overlay) -----------
+% A private overlay file may \renewcommand any of these before \begin{document}
+% to inject real values without editing this template.
+\newcommand{\resumeFullName}{Your Full Name}
+\newcommand{\resumeEmail}{you@example.com}
+\newcommand{\resumeLinkedInURL}{https://www.linkedin.com/in/your-handle/}
+\newcommand{\resumeLinkedInHandle}{your-handle}
+\newcommand{\resumeGitHubURL}{https://github.com/your-handle}
+\newcommand{\resumeGitHubHandle}{your-handle}
+\newcommand{\resumePhone}{(000) 000-0000}
+\newcommand{\resumeCitizenship}{Work Authorization}
+
+%-----------------RESUME STARTS HERE----------------------
+
+\begin{document}
+
+\begin{center}
+    \textbf{\Huge \scshape \resumeFullName} \\ \vspace{2pt}
+    \href{mailto:\resumeEmail}{\textcolor{BlueViolet}{\enspace \textbf{\resumeEmail}}} $|$
+    \href{\resumeLinkedInURL}{\textcolor{BlueViolet}{\faLinkedin\enspace \textbf{\resumeLinkedInHandle}}} $|$
+    \href{\resumeGitHubURL}{\textcolor{BlueViolet}{\faGithub\enspace \textbf{\resumeGitHubHandle}}} $|$
+    \small {\textbf{\resumePhone}} $|$
+    {\textbf{\resumeCitizenship}}
+\end{center}
+
+
+%-----------EDUCATION-----------
+\section{Education}
+  \resumeSubHeadingListStart
+    \resumeSubheading
+      {University Name}
+      {City, ST}
+      {Degree, Major; GPA: X.XX}{Expected Graduation Month YYYY}
+      \resumeItemListStart
+        \resumeItem{\textbf{Coursework:} Course A, Course B, Course C, Course D}
+        \resumeItem{\textbf{Honors/Roles:} Optional line for TA roles, scholarships, awards.}
+      \resumeItemListEnd
+  \resumeSubHeadingListEnd
+
+
+%-----------EXPERIENCE-----------
+\section{Experience}
+  \resumeSubHeadingListStart
+    \resumeSubheading
+      {Company or Organization}{City, ST}
+      {Role Title}{Start Month YYYY -- End Month YYYY}
+      \resumeItemListStart
+        \resumeItem{Impact-first bullet grounded in a specific evidence entry from your experience bank.}
+        \resumeItem{Second bullet: what you built or shipped, with a quantitative outcome where the evidence supports it.}
+        \resumeItem{Third bullet: scope, collaborators, or system-level contribution.}
+      \resumeItemListEnd
+  \resumeSubHeadingListEnd
+
+%-----------PROJECTS / RESEARCH-----------
+\section{Projects \& Research}
+  \resumeSubHeadingListStart
+
+    \resumeSubheading
+      {Project Name}{Affiliation or Venue}
+      {Role}{Start Month YYYY -- End Month YYYY}
+      \resumeItemListStart
+        \resumeItem{One-line project summary tied to a concrete artifact, dataset, or user count.}
+      \resumeItemListEnd
+
+  \resumeSubHeadingListEnd
+
+%-----------LEADERSHIP-----------
+\section{Leadership}
+  \resumeSubHeadingListStart
+    \resumeSubheading
+      {Activity or Organization}{Affiliation}
+      {Role}{Start Month YYYY -- End Month YYYY}
+      \resumeItemListStart
+        \resumeItem{What you led, team size, and the outcome.}
+      \resumeItemListEnd
+  \resumeSubHeadingListEnd
+
+%-----------SKILLS-----------
+\section{Skills}
+ \begin{itemize}[leftmargin=0.15in, label={}, topsep=2pt, parsep=0pt]
+    \small{\item{
+     \textbf{Languages:} Language A, Language B, Language C \\
+     \textbf{Frameworks \& Tools:} Framework A, Framework B, Tool C \\
+     \textbf{Infrastructure:} Infra A, Infra B, Infra C \\
+     \textbf{Domain:} Domain-specific tools relevant to your target roles \\
+    }}
+
+ \end{itemize}
+
+\end{document}

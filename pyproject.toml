@@ -1,0 +1,42 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "resume-agent"
+version = "0.1.0"
+description = "Evidence-grounded resume tailoring via MCP. Deterministic, no external LLM required."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "job-resume-agent contributors" }]
+keywords = ["mcp", "resume", "latex", "tailoring", "evidence"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Text Processing :: Markup :: LaTeX",
+]
+dependencies = [
+    "mcp>=1.2.0",
+    "pydantic>=2.6",
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+]
+
+[project.scripts]
+resume-agent = "resume_agent.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/resume_agent"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+asyncio_mode = "auto"

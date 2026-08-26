@@ -1,0 +1,367 @@
+schema_version: 1
+source_file: .private/alan-resume-source.tex
+source_policy: "Example data contains only claims explicitly present in the source resume."
+owner:
+  name: "Example Candidate"
+  email: "candidate@example.com"
+  phone: null
+  citizenship: null
+  links: []
+
+education:
+  - entry_id: edu-purdue
+    kind: education
+    title: "Bachelor of Science, Computer Science & Mathematics"
+    organization: Purdue University
+    location: "West Lafayette, IN"
+    start: null
+    end: "2028-05"
+    degree: "Bachelor of Science, Computer Science & Mathematics"
+    gpa: "3.72"
+    coursework: [Machine Learning, Data Structures & Algorithms, Probability & Statistics, Linear Algebra II]
+    awards: ["NASA Beyond The Algorithm Finalist (2025)", "Boeing CS Scholarship (2025)", "USACO Gold (2022)"]
+    bullets: []
+    tags: [computer-science, mathematics, biochemistry]
+
+experiences:
+  - entry_id: exp-ibm
+    kind: experience
+    title: "AI/ML Engineer Intern -- WatsonX Orchestrate"
+    organization: "IBM, Silicon Valley Lab"
+    location: "San Jose, CA"
+    start: "2026-05"
+    end: "2026-08"
+    role: "AI/ML Engineer Intern -- WatsonX Orchestrate"
+    tags: [multi-agent, rag, mcp, slack, microsoft-graph, governance]
+    bullets:
+      - bullet_id: bul-ibm-1
+        text: "Built multi-agent recruiter-automation workflows on WatsonX Orchestrate; RAG layer grounded LLM agents in role rubrics and hiring signals across 200+ documents, serving 50+ hiring managers and cutting screening time 60%."
+        evidence_ids: [ev-ibm-1]
+        quantities: [{raw: "200+ documents", value_min: 200, unit: documents, approximate: true}, {raw: "50+ hiring managers", value_min: 50, unit: hiring managers, approximate: true}, {raw: "60%", value_min: 60, unit: percent, approximate: false}]
+        named_entities: [WatsonX Orchestrate]
+        do_not_paraphrase: false
+      - bullet_id: bul-ibm-2
+        text: "Developed an MCP server exposing 20 tools for IBM-branded document, slide, website, and chart generation, integrated with Slack and Microsoft Graph APIs; adopted by 3 internal teams, replacing 5 manual workflows."
+        evidence_ids: [ev-ibm-2]
+        quantities: [{raw: "20 tools", value_min: 20, unit: tools, approximate: false}, {raw: "3 internal teams", value_min: 3, unit: internal teams, approximate: false}, {raw: "5 manual workflows", value_min: 5, unit: manual workflows, approximate: false}]
+        named_entities: [MCP, Slack, Microsoft Graph APIs]
+        do_not_paraphrase: false
+      - bullet_id: bul-ibm-3
+        text: "Designed the security and governance architecture for agent actions --- compliance checks, access scoping, and security guardrails --- and built evaluations for tool-call accuracy and retrieval groundedness."
+        evidence_ids: [ev-ibm-3]
+        quantities: []
+        named_entities: []
+        do_not_paraphrase: false
+
+  - entry_id: exp-surf
+    kind: experience
+    title: "SECQUOIA Research Lab: Quantum Federated Learning for Biomedicine"
+    organization: "Purdue Summer Undergraduate Research Fellowship (SURF)"
+    location: "Purdue University"
+    start: "2025-05"
+    end: "2025-08"
+    role: "SECQUOIA Research Lab: Quantum Federated Learning for Biomedicine"
+    tags: [quantum, federated-learning, biomedicine, pennylane, flower]
+    bullets:
+      - bullet_id: bul-surf-1
+        text: "First-author research manuscript on quantum federated learning over 5 biomedical datasets and flood segmentation (PennyLane/Flower, 4 clients, 4-qubit circuits)."
+        evidence_ids: [ev-surf-1]
+        quantities: [{raw: "5 biomedical datasets", value_min: 5, unit: biomedical datasets, approximate: false}, {raw: "4 clients", value_min: 4, unit: clients, approximate: false}, {raw: "4-qubit circuits", value_min: 4, unit: qubits, approximate: false}]
+        named_entities: [PennyLane, Flower]
+        do_not_paraphrase: false
+      - bullet_id: bul-surf-2
+        text: "Presented to NASA and quantum experts in Washington D.C.; authored the open-source QFL tutorial in Flower AI's official docs."
+        evidence_ids: [ev-surf-2]
+        quantities: []
+        named_entities: [NASA, Flower AI]
+        do_not_paraphrase: false
+
+  - entry_id: exp-tencent
+    kind: experience
+    title: "Software Engineer Intern --- Image Modification Tools (Transformers, LLMs)"
+    organization: Tencent
+    location: "Beijing, CN"
+    start: "2024-07"
+    end: "2024-08"
+    role: "Software Engineer Intern --- Image Modification Tools (Transformers, LLMs)"
+    tags: [transformers, llms, image-editing]
+    bullets:
+      - bullet_id: bul-tencent-1
+        text: "Built transformer/LLM image-editing features and experimentation tooling for digital-artist workflows; earned Tencent's Star Intern Award (top 25%)."
+        evidence_ids: [ev-tencent-1]
+        quantities: [{raw: "top 25%", value_min: 25, unit: percentile, approximate: false}]
+        named_entities: [Tencent]
+        do_not_paraphrase: false
+
+projects:
+  - entry_id: proj-free-food
+    kind: project
+    title: Free Food at Purdue
+    organization: Purdue University
+    location: "West Lafayette, IN"
+    start: "2026-01"
+    end: present
+    url: "https://freefoodatpurdue.com/"
+    tags: [swiftui, ios, fastapi, gcp]
+    bullets:
+      - bullet_id: bul-free-food-1
+        text: "Launched a live campus free-food map (SwiftUI iOS client, FastAPI on GCP); grew to 1,300+ users with 30 daily actives."
+        evidence_ids: [ev-free-food-1]
+        quantities: [{raw: "1,300+ users", value_min: 1300, unit: users, approximate: true}, {raw: "30 daily actives", value_min: 30, unit: daily actives, approximate: false}]
+        named_entities: [SwiftUI, FastAPI, GCP]
+        do_not_paraphrase: false
+
+  - entry_id: proj-qtom
+    kind: project
+    title: Quantum Enhanced Theory of Mind
+    organization: Purdue University
+    location: "West Lafayette, IN"
+    start: "2025-12"
+    end: "2026-05"
+    tags: [reinforcement-learning, pytorch, quantum]
+    bullets:
+      - bullet_id: bul-qtom-1
+        text: "Built a grid-world environment and RL baselines (DQN, PyTorch) for theory-of-mind agents across 3 task variants."
+        evidence_ids: [ev-qtom-1]
+        quantities: [{raw: "3 task variants", value_min: 3, unit: task variants, approximate: false}]
+        named_entities: [DQN, PyTorch]
+        do_not_paraphrase: false
+      - bullet_id: bul-qtom-2
+        text: "Designed a custom quantum theory-of-mind model (CNN + feedforward layers, pooling, and a parameterized quantum circuit) and benchmarked it against classical baselines."
+        evidence_ids: [ev-qtom-2]
+        quantities: []
+        named_entities: [CNN, PyTorch]
+        do_not_paraphrase: false
+
+  - entry_id: proj-clothes-sim
+    kind: project
+    title: "AI Clothes Simulation and 3D Human Body Proportion System"
+    organization: "Personal Project"
+    location: null
+    start: "2022-09"
+    end: "2023-11"
+    tags: [graph-neural-networks, computer-vision]
+    bullets:
+      - bullet_id: bul-clothes-sim-1
+        text: "Developed an AI system to simulate clothing fit across different body proportions using graph neural networks and computer vision."
+        evidence_ids: [ev-clothes-sim-1]
+        quantities: []
+        named_entities: ["Graph Neural Networks", "Computer Vision"]
+        do_not_paraphrase: false
+      - bullet_id: bul-clothes-sim-2
+        text: "Motivated by inconsistent online clothing sizing during quarantine; focused on improving fit estimation and user experience."
+        evidence_ids: [ev-clothes-sim-2]
+        quantities: []
+        named_entities: []
+        do_not_paraphrase: false
+
+  - entry_id: proj-wildfire
+    kind: project
+    title: "Lighting & Wildfire Satellite Prediction"
+    organization: "Purdue Machine Learning Club"
+    location: null
+    start: "2024-09"
+    end: present
+    tags: [machine-learning, satellite, wildfire]
+    bullets:
+      - bullet_id: bul-wildfire-1
+        text: "Built machine learning models using satellite lighting-derived signals to predict wildfire risk for earlier detection and assessment."
+        evidence_ids: [ev-wildfire-1]
+        quantities: []
+        named_entities: []
+        do_not_paraphrase: false
+      - bullet_id: bul-wildfire-2
+        text: "Performed data preprocessing and feature engineering on spatiotemporal satellite data to improve predictive performance."
+        evidence_ids: [ev-wildfire-2]
+        quantities: []
+        named_entities: []
+        do_not_paraphrase: false
+
+  - entry_id: proj-cafeteria-nutrition
+    kind: project
+    title: "Cafeteria Nutrition Detector via Computer Vision"
+    organization: "Personal Project"
+    location: null
+    start: "2021-09"
+    end: "2022-11"
+    tags: [computer-vision, food-recognition, nutrition]
+    bullets:
+      - bullet_id: bul-cafeteria-1
+        text: "Designed and prototyped a computer vision system to estimate calories, protein, carbs, and other nutrition information from cafeteria meals."
+        evidence_ids: [ev-cafeteria-1]
+        quantities: []
+        named_entities: []
+        do_not_paraphrase: false
+      - bullet_id: bul-cafeteria-2
+        text: "Explored portion estimation and food classification pipelines to support student health tracking."
+        evidence_ids: [ev-cafeteria-2]
+        quantities: []
+        named_entities: []
+        do_not_paraphrase: false
+
+leadership:
+  - entry_id: lead-drone
+    kind: leadership
+    title: Reinforcement Learning for Drone Navigation
+    organization: Purdue University
+    location: "West Lafayette, IN"
+    start: "2026-01"
+    end: "2026-05"
+    role: "Vertically Integrated Projects (VIP) --- Project Lead"
+    tags: [reinforcement-learning, leadership, simulation]
+    bullets:
+      - bullet_id: bul-drone-1
+        text: "Led a 10+ person team; developed environment/reward design, RL baselines, and a simulation pipeline. VIP Outstanding Sophomore Award."
+        evidence_ids: [ev-drone-1]
+        quantities: [{raw: "10+ person team", value_min: 10, unit: people, approximate: true}]
+        named_entities: [VIP]
+        do_not_paraphrase: false
+
+  - entry_id: lead-qiskit
+    kind: leadership
+    title: "IBM Qiskit Fall Fest 2025 --- Organizer"
+    organization: Purdue University
+    location: "West Lafayette, IN"
+    start: "2025-08"
+    end: "2025-11"
+    role: "Event Coordination & Speaking"
+    tags: [quantum, event-coordination, speaking]
+    bullets:
+      - bullet_id: bul-qiskit-1
+        text: "Coordinated and presented at a university-wide quantum computing event with four professors and 80+ attendees."
+        evidence_ids: [ev-qiskit-1]
+        quantities: [{raw: "four professors", value_min: 4, unit: professors, approximate: false}, {raw: "80+ attendees", value_min: 80, unit: attendees, approximate: true}]
+        named_entities: [IBM Qiskit Fall Fest 2025]
+        do_not_paraphrase: false
+
+  - entry_id: lead-shsid-gamedev
+    kind: leadership
+    title: "SHSID Game Development Club - Founder"
+    organization: "SHSID Game Development Club"
+    location: "Shanghai, CN"
+    start: "2021-02"
+    end: "2024-06"
+    role: "Curriculum, Teaching, Team Leadership"
+    tags: [game-development, teaching, leadership]
+    bullets:
+      - bullet_id: bul-shsid-gamedev-1
+        text: "Designed club curriculum, taught 80+ members coding and design, and led a team to produce 8 games and 15 videos."
+        evidence_ids: [ev-shsid-gamedev-1]
+        quantities: [{raw: "80+ members", value_min: 80, unit: members, approximate: true}, {raw: "8 games", value_min: 8, unit: games, approximate: false}, {raw: "15 videos", value_min: 15, unit: videos, approximate: false}]
+        named_entities: []
+        do_not_paraphrase: false
+      - bullet_id: bul-shsid-gamedev-2
+        text: "Organized game jams across 5 schools and shipped a physics puzzle game with 2000+ iOS downloads."
+        evidence_ids: [ev-shsid-gamedev-2]
+        quantities: [{raw: "5 schools", value_min: 5, unit: schools, approximate: false}, {raw: "2000+ iOS downloads", value_min: 2000, unit: iOS downloads, approximate: true}]
+        named_entities: [iOS]
+        do_not_paraphrase: false
+
+  - entry_id: lead-compco
+    kind: leadership
+    title: "CompCo - Founder"
+    organization: CompCo
+    location: null
+    start: "2022-08"
+    end: "2024-12"
+    role: "Full-Stack Platform (Vue.js, Node.js/Express, MongoDB)"
+    tags: [full-stack, vuejs, nodejs, mongodb, founder]
+    bullets:
+      - bullet_id: bul-compco-1
+        text: "Built a full-stack platform for international students using Vue.js, Node.js/Express, and MongoDB; scaled to 1,000+ users across 50 schools."
+        evidence_ids: [ev-compco-1]
+        quantities: [{raw: "1,000+ users", value_min: 1000, unit: users, approximate: true}, {raw: "50 schools", value_min: 50, unit: schools, approximate: false}]
+        named_entities: [Vue.js, Node.js, Express, MongoDB]
+        do_not_paraphrase: false
+      - bullet_id: bul-compco-2
+        text: "Led 80+ team members across product and engineering and secured funding from 2 institutions and 1 donor."
+        evidence_ids: [ev-compco-2]
+        quantities: [{raw: "80+ team members", value_min: 80, unit: team members, approximate: true}, {raw: "2 institutions", value_min: 2, unit: institutions, approximate: false}, {raw: "1 donor", value_min: 1, unit: donor, approximate: false}]
+        named_entities: []
+        do_not_paraphrase: false
+
+  - entry_id: lead-gtracing
+    kind: leadership
+    title: "GT-Racing Club - Programming Leader"
+    organization: "GT-Racing Club"
+    location: "Shanghai, CN"
+    start: "2021-02"
+    end: "2024-06"
+    role: "Autonomous Vehicle Software (CV & Sensors)"
+    tags: [autonomous-vehicles, computer-vision, sensors, leadership]
+    bullets:
+      - bullet_id: bul-gtracing-1
+        text: "Led the programming team to develop an autonomous car that navigates race tracks using computer vision."
+        evidence_ids: [ev-gtracing-1]
+        quantities: []
+        named_entities: []
+        do_not_paraphrase: false
+      - bullet_id: bul-gtracing-2
+        text: "Built a Raspberry Pi car that self-navigates and targets moving objects using YOLO and ultrasonic sensors."
+        evidence_ids: [ev-gtracing-2]
+        quantities: []
+        named_entities: ["Raspberry Pi", YOLO]
+        do_not_paraphrase: false
+
+skills:
+  - group: Languages
+    skills: [{name: Python, evidence_ids: [ev-skill-python]}, {name: C++, evidence_ids: [ev-skill-cpp]}, {name: C, evidence_ids: [ev-skill-c]}, {name: Java, evidence_ids: [ev-skill-java]}, {name: SQL, evidence_ids: [ev-skill-sql]}, {name: C#, evidence_ids: [ev-skill-csharp]}, {name: JavaScript, evidence_ids: [ev-skill-javascript]}]
+  - group: "ML & AI"
+    skills: [{name: PyTorch, evidence_ids: [ev-skill-pytorch]}, {name: NumPy, evidence_ids: [ev-skill-numpy]}, {name: Pandas, evidence_ids: [ev-skill-pandas]}, {name: "Hugging Face", evidence_ids: [ev-skill-huggingface]}, {name: "scikit-learn", evidence_ids: [ev-skill-sklearn]}, {name: JAX, evidence_ids: [ev-skill-jax]}, {name: LangChain, evidence_ids: [ev-skill-langchain]}, {name: MCP, evidence_ids: [ev-skill-mcp]}, {name: RAG, evidence_ids: [ev-skill-rag]}]
+  - group: Infrastructure
+    skills: [{name: Git, evidence_ids: [ev-skill-git]}, {name: Docker, evidence_ids: [ev-skill-docker]}, {name: Linux, evidence_ids: [ev-skill-linux]}, {name: FastAPI, evidence_ids: [ev-skill-fastapi]}, {name: "Slack & MS Graph APIs", evidence_ids: [ev-skill-apis]}, {name: "GCP/AWS", evidence_ids: [ev-skill-cloud]}, {name: CUDA, evidence_ids: [ev-skill-cuda]}, {name: MySQL, evidence_ids: [ev-skill-mysql]}, {name: MongoDB, evidence_ids: [ev-skill-mongodb]}]
+  - group: "Quantum & FL"
+    skills: [{name: PennyLane, evidence_ids: [ev-skill-pennylane]}, {name: Qiskit, evidence_ids: [ev-skill-qiskit]}, {name: Flower, evidence_ids: [ev-skill-flower]}]
+
+evidence:
+  - {evidence_id: ev-ibm-1, kind: note, title: "IBM resume bullet 1", body: "Built multi-agent recruiter-automation workflows on WatsonX Orchestrate; RAG layer grounded LLM agents in role rubrics and hiring signals across 200+ documents, serving 50+ hiring managers and cutting screening time 60%."}
+  - {evidence_id: ev-ibm-2, kind: note, title: "IBM resume bullet 2", body: "Developed an MCP server exposing 20 tools for IBM-branded document, slide, website, and chart generation, integrated with Slack and Microsoft Graph APIs; adopted by 3 internal teams, replacing 5 manual workflows."}
+  - {evidence_id: ev-ibm-3, kind: note, title: "IBM resume bullet 3", body: "Designed the security and governance architecture for agent actions --- compliance checks, access scoping, and security guardrails --- and built evaluations for tool-call accuracy and retrieval groundedness."}
+  - {evidence_id: ev-surf-1, kind: note, title: "SURF resume bullet 1", body: "First-author research manuscript on quantum federated learning over 5 biomedical datasets and flood segmentation (PennyLane/Flower, 4 clients, 4-qubit circuits)."}
+  - {evidence_id: ev-surf-2, kind: note, title: "SURF resume bullet 2", body: "Presented to NASA and quantum experts in Washington D.C.; authored the open-source QFL tutorial in Flower AI's official docs."}
+  - {evidence_id: ev-tencent-1, kind: note, title: "Tencent resume bullet", body: "Built transformer/LLM image-editing features and experimentation tooling for digital-artist workflows; earned Tencent's Star Intern Award (top 25%)."}
+  - {evidence_id: ev-free-food-1, kind: note, title: "Free Food resume bullet", body: "Launched a live campus free-food map (SwiftUI iOS client, FastAPI on GCP); grew to 1,300+ users with 30 daily actives."}
+  - {evidence_id: ev-qtom-1, kind: note, title: "Quantum ToM resume bullet 1", body: "Built a grid-world environment and RL baselines (DQN, PyTorch) for theory-of-mind agents across 3 task variants."}
+  - {evidence_id: ev-qtom-2, kind: note, title: "Quantum ToM resume bullet 2", body: "Designed a custom quantum theory-of-mind model (CNN + feedforward layers, pooling, and a parameterized quantum circuit) and benchmarked it against classical baselines."}
+  - {evidence_id: ev-drone-1, kind: note, title: "Drone leadership resume bullet", body: "Led a 10+ person team; developed environment/reward design, RL baselines, and a simulation pipeline. VIP Outstanding Sophomore Award."}
+  - {evidence_id: ev-qiskit-1, kind: note, title: "Qiskit event resume bullet", body: "Coordinated and presented at a university-wide quantum computing event with four professors and 80+ attendees."}
+  - {evidence_id: ev-skill-python, kind: note, title: "Skills section", body: "Python"}
+  - {evidence_id: ev-skill-cpp, kind: note, title: "Skills section", body: "C++"}
+  - {evidence_id: ev-skill-c, kind: note, title: "Skills section", body: "C"}
+  - {evidence_id: ev-skill-java, kind: note, title: "Skills section", body: "Java"}
+  - {evidence_id: ev-skill-sql, kind: note, title: "Skills section", body: "SQL"}
+  - {evidence_id: ev-skill-csharp, kind: note, title: "Skills section", body: "C#"}
+  - {evidence_id: ev-skill-javascript, kind: note, title: "Skills section", body: "JavaScript"}
+  - {evidence_id: ev-skill-pytorch, kind: note, title: "Skills section", body: "PyTorch"}
+  - {evidence_id: ev-skill-numpy, kind: note, title: "Skills section", body: "NumPy"}
+  - {evidence_id: ev-skill-pandas, kind: note, title: "Skills section", body: "Pandas"}
+  - {evidence_id: ev-skill-huggingface, kind: note, title: "Skills section", body: "Hugging Face"}
+  - {evidence_id: ev-skill-sklearn, kind: note, title: "Skills section", body: "scikit-learn"}
+  - {evidence_id: ev-skill-jax, kind: note, title: "Skills section", body: "JAX"}
+  - {evidence_id: ev-skill-langchain, kind: note, title: "Skills section", body: "LangChain"}
+  - {evidence_id: ev-skill-mcp, kind: note, title: "Skills section", body: "MCP"}
+  - {evidence_id: ev-skill-rag, kind: note, title: "Skills section", body: "RAG"}
+  - {evidence_id: ev-skill-git, kind: note, title: "Skills section", body: "Git"}
+  - {evidence_id: ev-skill-docker, kind: note, title: "Skills section", body: "Docker"}
+  - {evidence_id: ev-skill-linux, kind: note, title: "Skills section", body: "Linux"}
+  - {evidence_id: ev-skill-fastapi, kind: note, title: "Skills section", body: "FastAPI"}
+  - {evidence_id: ev-skill-apis, kind: note, title: "Skills section", body: "Slack & MS Graph APIs"}
+  - {evidence_id: ev-skill-cloud, kind: note, title: "Skills section", body: "GCP/AWS"}
+  - {evidence_id: ev-skill-cuda, kind: note, title: "Skills section", body: "CUDA"}
+  - {evidence_id: ev-skill-mysql, kind: note, title: "Skills section", body: "MySQL"}
+  - {evidence_id: ev-skill-mongodb, kind: note, title: "Skills section", body: "MongoDB"}
+  - {evidence_id: ev-skill-pennylane, kind: note, title: "Skills section", body: "PennyLane"}
+  - {evidence_id: ev-skill-qiskit, kind: note, title: "Skills section", body: "Qiskit"}
+  - {evidence_id: ev-skill-flower, kind: note, title: "Skills section", body: "Flower"}
+  - {evidence_id: ev-clothes-sim-1, kind: note, title: "AI Clothes Simulation bullet 1", body: "Developed an AI system to simulate clothing fit across different body proportions using graph neural networks and computer vision."}
+  - {evidence_id: ev-clothes-sim-2, kind: note, title: "AI Clothes Simulation bullet 2", body: "Motivated by inconsistent online clothing sizing during quarantine; focused on improving fit estimation and user experience."}
+  - {evidence_id: ev-wildfire-1, kind: note, title: "Wildfire Satellite Prediction bullet 1", body: "Built machine learning models using satellite lighting-derived signals to predict wildfire risk for earlier detection and assessment."}
+  - {evidence_id: ev-wildfire-2, kind: note, title: "Wildfire Satellite Prediction bullet 2", body: "Performed data preprocessing and feature engineering on spatiotemporal satellite data to improve predictive performance."}
+  - {evidence_id: ev-cafeteria-1, kind: note, title: "Cafeteria Nutrition Detector bullet 1", body: "Designed and prototyped a computer vision system to estimate calories, protein, carbs, and other nutrition information from cafeteria meals."}
+  - {evidence_id: ev-cafeteria-2, kind: note, title: "Cafeteria Nutrition Detector bullet 2", body: "Explored portion estimation and food classification pipelines to support student health tracking."}
+  - {evidence_id: ev-shsid-gamedev-1, kind: note, title: "SHSID Game Development Club bullet 1", body: "Designed club curriculum, taught 80+ members coding and design, and led a team to produce 8 games and 15 videos."}
+  - {evidence_id: ev-shsid-gamedev-2, kind: note, title: "SHSID Game Development Club bullet 2", body: "Organized game jams across 5 schools and shipped a physics puzzle game with 2000+ iOS downloads."}
+  - {evidence_id: ev-compco-1, kind: note, title: "CompCo bullet 1", body: "Built a full-stack platform for international students using Vue.js, Node.js/Express, and MongoDB; scaled to 1,000+ users across 50 schools."}
+  - {evidence_id: ev-compco-2, kind: note, title: "CompCo bullet 2", body: "Led 80+ team members across product and engineering and secured funding from 2 institutions and 1 donor."}
+  - {evidence_id: ev-gtracing-1, kind: note, title: "GT-Racing Club bullet 1", body: "Led the programming team to develop an autonomous car that navigates race tracks using computer vision."}
+  - {evidence_id: ev-gtracing-2, kind: note, title: "GT-Racing Club bullet 2", body: "Built a Raspberry Pi car that self-navigates and targets moving objects using YOLO and ultrasonic sensors."}
