@@ -17,6 +17,7 @@ from mcp.server.mcpserver import MCPServer
 from .bank import load_bank as _load_bank_from_disk
 from .export import ExportBlocked, check_export_gate, export_draft as _export_draft
 from .models import Draft, JobDescription
+from .skills_match import match_skills as _match_skills
 from .state import SessionStore
 from .tailor import analyze_jd, tailor as _tailor
 
@@ -107,9 +108,29 @@ def build_server(store: Optional[SessionStore] = None) -> MCPServer:
         }
 
     @server.tool(
+        name="match_skills",
+        description=(
+            "Report which JD requirements the loaded experience bank supports "
+            "(with evidence_ids/bullet_ids/skill_names) and which are gaps. "
+            "Pure analysis: creates no Draft, rewrites nothing. Call this "
+            "FIRST, before tailor_resume, to check bank coverage for a role."
+        ),
+    )
+    def match_skills(job_id: Optional[str] = None) -> dict[str, Any]:
+        jid = job_id or session.active_job_id()
+        if not jid:
+            raise ValueError("no job_id provided and no active job in session")
+        jd = session.get_job(jid)
+        bank = session.bank()
+        return _match_skills(bank, jd).model_dump()
+
+    @server.tool(
         name="tailor_resume",
         description=(
-            "Produce a tailored Draft for the given job_id (or the active JD)."
+            "Produce a minimal-touch, matched-only Draft for the given job_id "
+            "(or the active JD). Only entries/bullets/skills that actually "
+            "matched a JD keyword are included; bullet wording is never "
+            "rewritten. Prefer calling match_skills first."
         ),
     )
     def tailor_resume(job_id: Optional[str] = None) -> dict[str, Any]:
@@ -133,8 +154,12 @@ def build_server(store: Optional[SessionStore] = None) -> MCPServer:
     @server.tool(
         name="export_draft",
         description=(
-            "Render an approved Draft to a .tex file. Refuses to export if any "
-            "bullet is unsupported or an inferred bullet is unapproved."
+            "Render an approved Draft to a .tex file and compile it to check "
+            "it fits one page. Refuses to export if any bullet is unsupported "
+            "or an inferred bullet is unapproved. If the compiled PDF exceeds "
+            "one page, the lowest-scoring bullets are trimmed (pure removal, "
+            "never rewording) and it recompiles until it fits or bullets are "
+            "exhausted; dropped bullets are reported."
         ),
     )
     def export_draft(
@@ -156,13 +181,16 @@ def build_server(store: Optional[SessionStore] = None) -> MCPServer:
         except ExportBlocked as exc:
             return {"exported": False, "reasons": [str(exc)]}
         return {
-            "exported": True,
+            "exported": result.exported,
             "tex_path": result.tex_path,
             "draft_id": draft.draft_id,
+            "page_count": result.page_count,
+            "dropped_bullet_ids": result.dropped_bullet_ids,
+            "warnings": result.warnings,
         }
 
     # Retain references so type-checkers/linters don't flag them as unused.
-    _ = (load_bank, set_job_description, tailor_resume, get_draft, export_draft)
+    _ = (load_bank, set_job_description, match_skills, tailor_resume, get_draft, export_draft)
     return server
 
 

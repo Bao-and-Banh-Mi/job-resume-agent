@@ -21,7 +21,12 @@ class RankedBullet:
     matched_keywords: tuple[str, ...]
 
 
-def _match_keywords(keywords: list[str], haystack: str) -> list[str]:
+def find_matching_keywords(keywords: list[str], haystack: str) -> list[str]:
+    """Return the subset of ``keywords`` that appear (word-boundary-ish) in ``haystack``.
+
+    Kept public so callers outside the ranker (e.g. ``skills_match``) can reuse
+    the same matching semantics without duplicating logic.
+    """
     hay_lower = haystack.lower()
     matched: list[str] = []
     for kw in keywords:
@@ -46,7 +51,8 @@ def _match_keywords(keywords: list[str], haystack: str) -> list[str]:
     return matched
 
 
-def _bullet_haystack(entry: EntryCommon, bullet: BulletEntry) -> str:
+def bullet_haystack(entry: EntryCommon, bullet: BulletEntry) -> str:
+    """Concatenate the fields that count as ``bullet`` text for matching."""
     parts: list[str] = [
         bullet.text,
         " ".join(bullet.named_entities),
@@ -65,8 +71,8 @@ def rank_bullets(
     ranked: list[RankedBullet] = []
     for entry in entries:
         for bullet in entry.bullets:
-            haystack = _bullet_haystack(entry, bullet)
-            matched = _match_keywords(keywords, haystack)
+            haystack = bullet_haystack(entry, bullet)
+            matched = find_matching_keywords(keywords, haystack)
             ranked.append(
                 RankedBullet(
                     entry=entry,

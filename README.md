@@ -6,9 +6,36 @@ The product refuses to fabricate. If a required skill or achievement is not back
 
 > **Status: proof of concept.** The repository includes a deterministic MCP server, evidence linker, safe LaTeX renderer, CLI, and tests. It does not yet include the Chrome extension or external LLM provider adapters.
 
+## MCP tool workflow
+
+The MCP server exposes five tools. **`match_skills` is the primary tool** — call it
+first, before generating anything:
+
+1. **`load_bank(path)`** — load an experience bank YAML.
+2. **`set_job_description(raw_text, ...)`** — capture a JD, extract requirements.
+3. **`match_skills(job_id)`** — *(primary)* pure analysis: which JD requirements the
+   bank supports (with `evidence_ids`/`bullet_ids`/`skill_names`), which are gaps,
+   and a `coverage_ratio`. Creates no draft, rewrites nothing. Use this to decide
+   whether the bank has enough evidence for a role before tailoring at all.
+4. **`tailor_resume(job_id)`** — *(intentionally minimal)* builds a `Draft` from
+   only the entries/bullets/skills that actually matched a JD keyword. Bullet text
+   is always copied **verbatim** from the bank — selection only, never rewriting or
+   padding. Entries and skill groups with zero matches are dropped rather than
+   included as filler.
+5. **`get_draft(draft_id)`** — retrieve a previously tailored draft.
+6. **`export_draft(draft_id, output_dir)`** — render the draft to `.tex` **and
+   compile it with `pdflatex`** to enforce a real one-page result. If the compiled
+   PDF is more than one page, the single lowest-`match_score` bullet is dropped
+   (pure removal, never reworded) and it recompiles, repeating until it fits one
+   page or bullets run out. The response reports `page_count` and
+   `dropped_bullet_ids` so you can see exactly what was cut. If it still can't fit
+   after trimming, export fails rather than shipping an overflowing PDF.
+
 ## Quickstart
 
-Requires Python 3.11+.
+Requires Python 3.11+ and a TeX distribution with `pdflatex` on `PATH` (MiKTeX,
+TeX Live, etc.) for the one-page export gate. Without `pdflatex`, exports still
+work but skip the page-count enforcement (a warning is returned).
 
 ```bash
 python -m pip install -e ".[dev]"

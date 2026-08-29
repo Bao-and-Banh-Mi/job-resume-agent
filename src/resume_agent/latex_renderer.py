@@ -119,7 +119,14 @@ def _render_section(section: DraftSection) -> str:
     title = title_map.get(section.kind, section.kind.title())
 
     if section.kind == "skills":
+        # Skip the header entirely when no skills matched the JD.
+        if not section.skill_groups:
+            return ""
         return _render_skills_section(title, section.skill_groups)
+
+    # Non-skills sections: skip if the tailor emitted no entries.
+    if not section.entries:
+        return ""
 
     body_lines = [f"\\section{{{title}}}", "  \\resumeSubHeadingListStart"]
     for entry in section.entries:

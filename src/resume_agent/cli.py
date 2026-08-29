@@ -77,7 +77,19 @@ def _cmd_tailor(args: argparse.Namespace) -> int:
         except ExportBlocked as exc:
             print(f"\nEXPORT BLOCKED: {exc}", file=sys.stderr)
             return 3
-        print(f"\nwrote {result.tex_path}")
+        if not result.exported:
+            print("\nEXPORT BLOCKED (one-page fit):", file=sys.stderr)
+            for w in result.warnings:
+                print(f"  - {w}", file=sys.stderr)
+            return 3
+        print(f"\nwrote {result.tex_path} (page_count={result.page_count})")
+        if result.dropped_bullet_ids:
+            print(
+                f"trimmed {len(result.dropped_bullet_ids)} bullet(s) to fit one page: "
+                + ", ".join(result.dropped_bullet_ids)
+            )
+        for w in result.warnings:
+            print(f"warning: {w}")
     return 0
 
 

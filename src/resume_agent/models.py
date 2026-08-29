@@ -159,6 +159,10 @@ class DraftBullet(_Base):
     classification: BulletClassification
     edited_by_user: bool = False
     approved: bool = False
+    # Number of JD keywords matched by this bullet in the bank; threaded from
+    # the retriever so downstream trimming (export.py's one-page gate) can rank
+    # bullets globally without recomputing keyword matching.
+    match_score: int = 0
 
 
 class DraftEntry(_Base):
@@ -210,3 +214,29 @@ class Draft(_Base):
     sections: list[DraftSection] = Field(default_factory=list)
     gaps: list[Gap] = Field(default_factory=list)
     keyword_coverage: KeywordCoverage
+
+
+class RequirementMatch(_Base):
+    """Which bank evidence supports a single JD requirement."""
+
+    requirement_id: str
+    requirement_text: str
+    matched_keywords: list[str] = Field(default_factory=list)
+    evidence_ids: list[str] = Field(default_factory=list)
+    bullet_ids: list[str] = Field(default_factory=list)
+    skill_names: list[str] = Field(default_factory=list)
+
+
+class SkillsMatch(_Base):
+    """Report emitted by the ``match_skills`` MCP tool.
+
+    Pure summary: no draft is created, no bullets are rewritten. An agent
+    is expected to call this first, then decide whether to invoke
+    ``tailor_resume`` for the same ``job_id``.
+    """
+
+    job_id: str
+    total_requirements: int
+    matched: list[RequirementMatch] = Field(default_factory=list)
+    unmatched: list[RequirementMatch] = Field(default_factory=list)
+    coverage_ratio: float = 0.0

@@ -51,3 +51,37 @@ def test_tailor_reports_gaps_for_unsupported_keywords(example_bank):
     unmatched_lower = {u.lower() for u in draft.keyword_coverage.unmatched}
     assert "kubernetes" in unmatched_lower
     assert "terraform" in unmatched_lower
+
+
+def test_tailor_is_minimal_touch_no_zero_score_padding(example_bank):
+    """A JD with no overlapping keywords must not pad sections with unrelated
+    bank entries or fall back to dumping every skill -- minimal-touch means
+    only genuinely matched content ever appears in the draft."""
+    text = "Must have: kubernetes, terraform, dbt, and snowflake."
+    draft = tailor(example_bank, _mk_jd(text))
+
+    for section in draft.sections:
+        for entry in section.entries:
+            # Every surviving bullet must have actually matched something.
+            for b in entry.bullets:
+                assert b.match_score > 0
+        # No skill group may appear unless it was pared down to matched skills.
+        for group in section.skill_groups:
+            assert len(group.skills) > 0
+
+    # With zero overlap, sections should end up empty rather than padded.
+    experience = next((s for s in draft.sections if s.kind == "experience"), None)
+    if experience is not None:
+        assert experience.entries == []
+    skills_section = next((s for s in draft.sections if s.kind == "skills"), None)
+    if skills_section is not None:
+        assert skills_section.skill_groups == []
+
+
+def test_tailor_only_includes_bullets_with_positive_match_score(example_bank, sample_jd_text):
+    draft = tailor(example_bank, _mk_jd(sample_jd_text))
+    for section in draft.sections:
+        for entry in section.entries:
+            assert entry.bullets, "entries with zero matching bullets must be dropped"
+            for b in entry.bullets:
+                assert b.match_score > 0

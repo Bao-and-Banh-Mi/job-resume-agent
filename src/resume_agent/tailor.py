@@ -84,7 +84,11 @@ def _select_bullets_for_section(
 def _keep_top_entries(
     by_entry: dict[str, list[RankedBullet]], entries: list[EntryCommon], cap: int
 ) -> list[EntryCommon]:
-    """Return entries ordered by best matched bullet score, then bank order."""
+    """Return entries ordered by best matched bullet score, then bank order.
+
+    Entries with no matching bullets (top score == 0) are dropped entirely.
+    Minimal-touch selection: we never pad the section with unrelated entries.
+    """
     scored = []
     order = {e.entry_id: i for i, e in enumerate(entries)}
     for entry in entries:
@@ -94,9 +98,6 @@ def _keep_top_entries(
     # Sort: higher score first, then original bank order.
     scored.sort(key=lambda t: (-t[0], t[1]))
     kept = [entry for score, _, entry in scored if score > 0][:cap]
-    if not kept:
-        # Fall back to the first ``cap`` entries so the section is never empty.
-        kept = entries[:cap]
     kept.sort(key=lambda e: order[e.entry_id])
     return kept
 
@@ -107,12 +108,8 @@ def _build_draft_bullets(
     evidence_index: dict[str, EvidenceItem],
     draft_id: str,
 ) -> list[DraftBullet]:
-    picked = ranked_for_entry[:_MAX_BULLETS_PER_ENTRY]
-    if not picked:
-        picked = [
-            RankedBullet(entry=entry, bullet=b, score=0, matched_keywords=())
-            for b in entry.bullets[:_MAX_BULLETS_PER_ENTRY]
-        ]
+    """Build DraftBullets only for bullets that actually matched a JD keyword."""
+    picked = [r for r in ranked_for_entry if r.score > 0][:_MAX_BULLETS_PER_ENTRY]
 
     out: list[DraftBullet] = []
     for r in picked:
@@ -138,6 +135,7 @@ def _build_draft_bullets(
                 edited_by_user=False,
                 # Verbatim bullets require no explicit approval to export.
                 approved=classification.label in {"verbatim", "paraphrased"},
+                match_score=r.score,
             )
         )
     return out
@@ -165,16 +163,18 @@ def _draft_entry_from(
 def _filter_skill_groups(
     bank_groups: Iterable[SkillGroup], keywords: list[str]
 ) -> list[SkillGroup]:
-    """Keep only skills the JD mentions; drop empty groups."""
+    """Keep only skills the JD mentions; drop empty groups.
+
+    Minimal-touch: if nothing matches we return an empty list -- the render
+    layer skips empty skill sections rather than dumping the entire bank as
+    filler.
+    """
     kw_lower = {k.lower() for k in keywords}
     out: list[SkillGroup] = []
     for g in bank_groups:
         kept = [s for s in g.skills if s.name.lower() in kw_lower]
         if kept:
             out.append(SkillGroup(group=g.group, skills=kept))
-    # If nothing matched, emit all groups (so the section is populated).
-    if not out:
-        out = [SkillGroup(**g.model_dump()) for g in bank_groups]
     return out
 
 
