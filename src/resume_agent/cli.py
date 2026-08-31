@@ -106,7 +106,15 @@ def _cmd_tailor(args: argparse.Namespace) -> int:
             for w in result.warnings:
                 print(f"  - {w}", file=sys.stderr)
             return 3
-        print(f"\nwrote {result.tex_path} (page_count={result.page_count})")
+        fill = (
+            f", fill={result.fill_ratio:.0%}"
+            if result.fill_ratio is not None
+            else ""
+        )
+        print(
+            f"\nwrote {result.tex_path} "
+            f"(page_count={result.page_count}{fill})"
+        )
         if result.pdf_path:
             print(f"wrote {result.pdf_path}")
         if result.dropped_bullet_ids:

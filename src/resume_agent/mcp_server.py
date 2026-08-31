@@ -78,6 +78,14 @@ Rules you must follow:
     linker will catch violations and block the export.
   * Order matters: list entries and bullets strongest-first, because
     one-page trimming removes from the tail.
+  * FILL THE PAGE. One page is a ceiling, not a target. With a typical
+    student bank, that means including nearly every entry -- an experience
+    that isn't a bullseye for this posting still demonstrates shipped work,
+    and a half-empty resume reads as a thin candidate, not a focused one.
+    Only omit an entry when it would actively confuse the reader about the
+    role you're applying for. tailor_resume reports bank_usage and warns
+    when your selection is too narrow; export_draft reports fill_ratio.
+    Aim for 0.85+; if you come back under it, add content and re-tailor.
 """
 
 
@@ -212,8 +220,10 @@ def build_server(store: Optional[SessionStore] = None) -> MCPServer:
             "align wording with the posting, but it is checked against the "
             "original bullet's evidence: new numbers or new proper nouns are "
             "labelled 'unsupported' and will block export. Unknown ids are "
-            "errors. Education and Skills are always included when the bank "
-            "has them."
+            "errors. Education is always included. The 'skills' field only "
+            "sets EMPHASIS ORDER -- every bank skill is listed regardless, "
+            "since all of them are evidence-backed and omitting them just "
+            "makes the candidate look narrower."
         ),
     )
     def tailor_resume(
@@ -239,9 +249,40 @@ def build_server(store: Optional[SessionStore] = None) -> MCPServer:
         session.put_draft(draft)
 
         blockers = check_export_gate(draft)
+
+        # Tell the agent how much of the bank it actually used. A one-page
+        # cap is a ceiling, not a target: with a small bank, omitting entries
+        # is the main cause of a half-empty resume, and the agent cannot see
+        # that from its own selection without being told.
+        used_entries = sum(
+            len(s.entries) for s in draft.sections if s.kind != "skills"
+        )
+        used_bullets = sum(
+            len(e.bullets) for s in draft.sections for e in s.entries
+        )
+        avail_entries = len(bank.all_entries())
+        avail_bullets = sum(len(e.bullets) for e in bank.all_entries())
+
+        usage = {
+            "entries_used": used_entries,
+            "entries_available": avail_entries,
+            "bullets_used": used_bullets,
+            "bullets_available": avail_bullets,
+        }
+        advice = None
+        if avail_bullets and used_bullets / avail_bullets < 0.6:
+            advice = (
+                f"You selected {used_bullets}/{avail_bullets} bullets and "
+                f"{used_entries}/{avail_entries} entries. That will likely "
+                "leave the page half empty, which reads as a thin candidate. "
+                "Unless an entry is genuinely irrelevant, include it -- a "
+                "full page of real experience beats a sparse 'focused' one."
+            )
+
         return {
             "ok": True,
             "draft_id": draft.draft_id,
+            "bank_usage": usage,
             "sections": [
                 {
                     "kind": s.kind,
@@ -272,6 +313,7 @@ def build_server(store: Optional[SessionStore] = None) -> MCPServer:
             ],
             "gaps": [g.requirement_text for g in draft.gaps],
             "export_blockers": blockers,
+            "sparse_warning": advice,
             "next_step": (
                 "export_draft to compile a one-page PDF."
                 if not blockers
@@ -294,7 +336,9 @@ def build_server(store: Optional[SessionStore] = None) -> MCPServer:
             "to export if any bullet is unsupported or an inferred bullet is "
             "unapproved. On overflow the least-important trailing bullets are "
             "removed (never reworded) and it recompiles; dropped bullets are "
-            "reported."
+            "reported. Also returns fill_ratio (fraction of the page actually "
+            "used): below ~0.75 the resume reads as thin rather than concise, "
+            "so add more genuinely-relevant bank content instead of shipping it."
         ),
     )
     def export_draft(
@@ -318,6 +362,7 @@ def build_server(store: Optional[SessionStore] = None) -> MCPServer:
             "pdf_path": result.pdf_path,
             "draft_id": draft.draft_id,
             "page_count": result.page_count,
+            "fill_ratio": result.fill_ratio,
             "dropped_bullet_ids": result.dropped_bullet_ids,
             "warnings": result.warnings,
         }

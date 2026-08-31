@@ -130,3 +130,38 @@ def test_skills_section_always_present(
     draft = _draft(example_bank, full_selection)
     result = export_draft(draft, output_dir=tmp_path, template_path=template_path)
     assert "\\section{Skills}" in result.tex
+
+
+@pytest.mark.skipif(shutil.which("pdflatex") is None, reason="pdflatex not on PATH")
+def test_fill_ratio_is_measured(tmp_path, example_bank, template_path, full_selection):
+    """A one-page cap alone allowed half-empty resumes to ship silently."""
+    draft = _draft(example_bank, full_selection)
+    result = export_draft(draft, output_dir=tmp_path, template_path=template_path)
+    assert result.fill_ratio is not None
+    assert 0.0 < result.fill_ratio <= 1.0
+
+
+@pytest.mark.skipif(shutil.which("pdflatex") is None, reason="pdflatex not on PATH")
+def test_sparse_resume_is_warned_about(tmp_path, example_bank, template_path):
+    """A near-empty draft must still export, but must say it looks thin."""
+    entry = example_bank.experiences[0]
+    draft = _draft(
+        example_bank,
+        {
+            "sections": [
+                {
+                    "kind": "experience",
+                    "entries": [
+                        {
+                            "entry_id": entry.entry_id,
+                            "bullets": [{"bullet_id": entry.bullets[0].bullet_id}],
+                        }
+                    ],
+                }
+            ]
+        },
+    )
+    result = export_draft(draft, output_dir=tmp_path, template_path=template_path)
+    assert result.exported is True
+    assert result.fill_ratio < 0.75
+    assert any("fills only" in w for w in result.warnings)

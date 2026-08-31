@@ -129,16 +129,24 @@ def _draft_entry_from(entry: EntryCommon, bullets: list[DraftBullet]) -> DraftEn
 def _resolve_skills(
     bank: ExperienceBank, selection: ResumeSelection
 ) -> list[SkillGroup]:
-    """Resolve the agent's chosen skills; fall back to the whole bank.
+    """Resolve the Skills section: the agent reorders, it never omits.
 
-    A resume with no Skills section parses as a candidate with no skills.
-    When the agent selects nothing, emitting the bank's own skills verbatim
-    is both honest (they are all evidence-backed bank entries) and far better
-    than shipping a resume with the section missing.
+    Every skill in the bank is already evidence-backed, so there is no
+    honesty argument for hiding one -- and a posting that does not *mention*
+    Julia is not a posting that penalises knowing Julia. Dropping unmatched
+    skills only made the resume shorter and the candidate look narrower,
+    which is the opposite of what tailoring is for.
+
+    So the agent's selection is treated as an *emphasis* signal: the groups
+    and skills it names lead, in the order it gave, and every remaining bank
+    skill is appended afterwards under its own bank group. Selecting nothing
+    yields the bank's own ordering.
     """
     index = skill_index(bank)
 
     groups: list[SkillGroup] = []
+    used: set[str] = set()
+
     for sel in selection.skills:
         kept: list[Skill] = []
         for name in sel.skills:
@@ -148,13 +156,28 @@ def _resolve_skills(
                     f"skill {name!r} is not in the bank; a resume may only "
                     "list skills the bank can evidence"
                 )
+            if skill.name.lower() in used:
+                continue
             kept.append(skill)
+            used.add(skill.name.lower())
         if kept:
             groups.append(SkillGroup(group=sel.group, skills=kept))
 
-    if groups:
-        return groups
-    return [SkillGroup(group=g.group, skills=list(g.skills)) for g in bank.skills]
+    # Append everything the agent did not mention, preserving bank grouping.
+    for bank_group in bank.skills:
+        remaining = [s for s in bank_group.skills if s.name.lower() not in used]
+        if not remaining:
+            continue
+        existing = next(
+            (g for g in groups if g.group.lower() == bank_group.group.lower()), None
+        )
+        if existing is not None:
+            existing.skills.extend(remaining)
+        else:
+            groups.append(SkillGroup(group=bank_group.group, skills=remaining))
+        used.update(s.name.lower() for s in remaining)
+
+    return groups
 
 
 def tailor_from_selection(

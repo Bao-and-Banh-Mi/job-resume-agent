@@ -27,7 +27,8 @@ So the split is:
 | Which experience speaks to them | That coverage claims have surviving citations |
 | What order content appears in | That rephrasings introduce no new numbers or proper nouns |
 | How a bullet is worded for this posting | That the PDF really is one page (by compiling it) |
-| | That Education and Skills are always present |
+| Which skills to emphasise first | That Education and every bank skill are always present |
+| | That a half-empty page is reported, not shipped silently |
 
 The model gets full latitude over **selection and wording**, and zero
 latitude over **facts**. That is what makes "let the model polish it" safe.
@@ -54,7 +55,26 @@ latitude over **facts**. That is what makes "let the model polish it" safe.
 6. **`export_draft(draft_id, output_dir)`** — renders `.tex` and **compiles
    with `pdflatex`**, counting real pages. On overflow the least-important
    trailing bullets are dropped (never reworded) and it recompiles. Returns
-   `page_count`, `pdf_path`, and `dropped_bullet_ids`.
+   `page_count`, `pdf_path`, `dropped_bullet_ids`, and `fill_ratio`.
+
+### One page is a ceiling, not a target
+
+Enforcing "at most one page" alone let thin drafts ship as half-empty pages,
+which reads to a recruiter as a thin candidate rather than a focused one.
+Three of the five test resumes were using only ~57% of the page. Two changes
+fixed it:
+
+- **Skills are additive.** The agent's `skills` selection now sets *emphasis
+  order*, not membership — every bank skill is listed regardless. All of them
+  are evidence-backed, and a posting that doesn't mention Julia is not a
+  posting that penalises knowing Julia.
+- **Sparseness is reported.** `tailor_resume` returns `bank_usage` and warns
+  when the selection uses under 60% of available bullets; `export_draft`
+  measures the compiled PDF's real ink extent and returns `fill_ratio`,
+  warning below 0.75. The agent can then add content and re-tailor.
+
+Result across the five test postings: **57–83% fill → 78–85%**, still one
+page, with no trimming required.
 
 ### What the guarantees look like in practice
 

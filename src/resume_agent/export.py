@@ -13,9 +13,11 @@ without spinning up the MCP transport.
 
 from __future__ import annotations
 
+import re
 import shutil
 import subprocess
 import tempfile
+import zlib
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -23,6 +25,11 @@ from .latex_renderer import render_draft
 from .models import Draft
 
 _MAX_TRIM_ITERATIONS = 15
+
+# Below this fraction of page height, a one-page resume reads as thin rather
+# than concise. Not a hard failure -- an honest sparse resume is still the
+# right output for a weak-fit posting -- but the caller must be told.
+_SPARSE_FILL_THRESHOLD = 0.75
 
 
 class ExportBlocked(Exception):
@@ -36,6 +43,9 @@ class ExportResult:
     exported: bool = True
     page_count: int | None = None
     pdf_path: str = ""
+    # Fraction of page height covered by content. ~0.90+ is a full page;
+    # below _SPARSE_FILL_THRESHOLD the caller is warned the resume looks thin.
+    fill_ratio: float | None = None
     dropped_bullet_ids: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
 
@@ -128,9 +138,63 @@ def _count_pdf_pages(pdf_path: Path) -> int | None:
         return None
 
 
-def _iter_page_type_matches(data: bytes):
-    import re
+def _measure_fill_ratio(pdf_path: Path) -> float | None:
+    """Fraction of the page height between the top margin and the last content.
 
+    A one-page cap alone lets a thin draft ship as a half-empty page, which
+    reads to a recruiter as a thin candidate. We measure the real ink extent
+    so callers can react.
+
+    Method: decompress the content streams and track vertical text positions.
+    pdfTeX emits absolute ``1 0 0 1 x y cm`` for rules and relative ``dx dy
+    Td`` for text runs within a ``BT``/``ET`` block, so we accumulate ``Td``
+    offsets per block and take the lowest resulting baseline. Returns
+    ``None`` if the PDF cannot be parsed rather than guessing.
+    """
+    try:
+        data = pdf_path.read_bytes()
+    except OSError:
+        return None
+
+    box = re.search(
+        rb"/MediaBox\s*\[\s*[\d.-]+\s+[\d.-]+\s+[\d.-]+\s+([\d.-]+)", data
+    )
+    if not box:
+        return None
+    height = float(box.group(1))
+    if height <= 0:
+        return None
+
+    ys: list[float] = []
+    for m in re.finditer(rb"stream\r?\n(.*?)endstream", data, re.S):
+        try:
+            stream = zlib.decompress(m.group(1))
+        except zlib.error:
+            continue
+        cursor: float | None = None
+        for tok in re.finditer(
+            rb"BT|ET|([-\d.]+)\s+([-\d.]+)\s+Td|1 0 0 1 ([-\d.]+) ([-\d.]+) cm",
+            stream,
+        ):
+            raw = tok.group(0)
+            if raw in (b"BT", b"ET"):
+                cursor = None
+            elif tok.group(4) is not None:  # absolute placement (rules)
+                ys.append(float(tok.group(4)))
+            else:  # relative text placement
+                dy = float(tok.group(2))
+                cursor = dy if cursor is None else cursor + dy
+                ys.append(cursor)
+
+    on_page = [y for y in ys if 0.0 < y < height]
+    if not on_page:
+        return None
+
+    top, bottom = max(on_page), min(on_page)
+    return round((top - bottom) / height, 3)
+
+
+def _iter_page_type_matches(data: bytes):
     for m in re.finditer(rb"/Type\s*/Page(?![a-zA-Z])", data):
         yield m
 
@@ -253,12 +317,21 @@ def export_draft(
                     warnings.append(
                         f"trimmed {len(dropped)} lowest-priority bullet(s) to fit one page"
                     )
+                fill = _measure_fill_ratio(pdf_dest)
+                if fill is not None and fill < _SPARSE_FILL_THRESHOLD:
+                    warnings.append(
+                        f"resume fills only {fill:.0%} of the page; "
+                        f"{1 - fill:.0%} is empty. This reads as a thin "
+                        "candidate. Include more genuinely-relevant bank "
+                        "content, or reconsider whether this posting is a fit."
+                    )
                 return ExportResult(
                     tex_path=str(tex_path),
                     tex=tex,
                     exported=True,
                     page_count=page_count,
                     pdf_path=str(pdf_dest),
+                    fill_ratio=fill,
                     dropped_bullet_ids=dropped,
                     warnings=warnings,
                 )

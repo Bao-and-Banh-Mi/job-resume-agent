@@ -239,10 +239,45 @@ def test_education_is_included_even_when_not_selected(example_bank):
     assert "education" in kinds
 
 
+def _skill_names(draft):
+    section = next(s for s in draft.sections if s.kind == "skills")
+    return [s.name for g in section.skill_groups for s in g.skills]
+
+
 def test_skills_section_falls_back_to_bank_when_agent_selects_none(example_bank):
     draft = tailor_from_selection(example_bank, _jd(), _sel({"sections": []}))
-    skills = [s for s in draft.sections if s.kind == "skills"]
-    assert skills and skills[0].skill_groups, "resume must never ship with no skills"
+    assert _skill_names(draft), "resume must never ship with no skills"
+
+
+def test_every_bank_skill_is_listed_even_when_agent_picks_a_subset(example_bank):
+    """Skills are additive: the agent sets order, never membership.
+
+    Every bank skill is evidence-backed, so omitting one only makes the
+    candidate look narrower and leaves the page emptier. Regression guard
+    for resumes that shipped with a two-item Skills line.
+    """
+    one = example_bank.skills[0].skills[0].name
+    draft = tailor_from_selection(
+        example_bank,
+        _jd(),
+        _sel({"sections": [], "skills": [{"group": "Relevant", "skills": [one]}]}),
+    )
+    listed = _skill_names(draft)
+    bank_skills = {s.name for g in example_bank.skills for s in g.skills}
+    assert set(listed) == bank_skills, "no bank skill may be dropped"
+    assert listed[0] == one, "agent's pick must lead"
+    assert len(listed) == len(set(listed)), "no duplicates"
+
+
+def test_agent_skill_emphasis_does_not_duplicate_across_groups(example_bank):
+    names = [s.name for s in example_bank.skills[0].skills[:2]]
+    draft = tailor_from_selection(
+        example_bank,
+        _jd(),
+        _sel({"sections": [], "skills": [{"group": "Highlight", "skills": names}]}),
+    )
+    listed = _skill_names(draft)
+    assert len(listed) == len(set(listed))
 
 
 def test_agent_section_order_is_preserved(example_bank, full_selection):
