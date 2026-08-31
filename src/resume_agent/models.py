@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from typing import Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 BulletLabel = Literal["verbatim", "paraphrased", "inferred", "unsupported"]
 EntryKind = Literal["education", "experience", "project", "leadership"]
@@ -220,7 +220,13 @@ class AssessedRequirement(_Base):
     text: str
     category: RequirementCategory = "skill"
     verdict: Verdict = "gap"
-    supporting_bullet_ids: list[str] = Field(default_factory=list)
+    # Accepts bullet ids AND entry ids. Degree/GPA/coursework requirements
+    # are properties of an education *entry*, which has no bullets, so
+    # restricting this to bullet ids forced agents to either cite unrelated
+    # experience or report a false gap. Both live runs hit this.
+    supporting_bullet_ids: list[str] = Field(
+        default_factory=list, alias="supporting_ids"
+    )
     supporting_skills: list[str] = Field(default_factory=list)
     note: str = ""
 
@@ -259,8 +265,22 @@ class SelectedEntry(_Base):
 
 
 class SelectedSection(_Base):
-    kind: Literal["education", "experience", "projects", "leadership"]
+    # Accepts BOTH the singular entry-kind spelling that ``load_bank``'s
+    # catalog reports ("project") and the plural section spelling used
+    # internally ("projects"). A live agent run tripped on exactly this:
+    # the catalog labels entries "project", so the model naturally wrote
+    # "project" here and got a validation error. Making the tool contradict
+    # its own output is our bug, not the caller's, so we normalise instead
+    # of rejecting.
+    kind: Literal[
+        "education", "experience", "projects", "leadership", "project"
+    ]
     entries: list[SelectedEntry] = Field(default_factory=list)
+
+    @field_validator("kind", mode="after")
+    @classmethod
+    def _normalise_kind(cls, v: str) -> str:
+        return "projects" if v == "project" else v
 
 
 class SelectedSkillGroup(_Base):

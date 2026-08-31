@@ -22,7 +22,7 @@ missing a nice-to-have and a flat ratio hides that.
 
 from __future__ import annotations
 
-from .catalog import bullet_index, skill_index
+from .catalog import bullet_index, entry_index, skill_index
 from .models import AssessedRequirement, ExperienceBank, FitReport
 
 # A must-have counts this many times a nice-to-have in weighted coverage.
@@ -50,6 +50,7 @@ def analyze_fit(
     """Validate ``requirements`` against ``bank`` and produce a FitReport."""
     bullets = bullet_index(bank)
     skills = skill_index(bank)
+    entries = entry_index(bank)
 
     corrections: list[str] = []
     validated: list[AssessedRequirement] = []
@@ -60,6 +61,12 @@ def analyze_fit(
         real_bullets = []
         for bid in checked.supporting_bullet_ids:
             if bid in bullets:
+                real_bullets.append(bid)
+            elif bid in entries:
+                # Degree/coursework requirements have no bullet to cite --
+                # a live agent hit this citing "CS degree" and had to point
+                # at unrelated experience bullets instead. An entry_id is a
+                # legitimate citation for entry-level facts, so accept it.
                 real_bullets.append(bid)
             else:
                 corrections.append(

@@ -180,3 +180,99 @@ def test_preview_draft_shape(example_bank, full_selection):
     preview = preview_draft(draft)
     assert preview["draft_id"] == draft.draft_id
     assert preview["sections"]
+
+
+# --- regressions found by a live Claude Code agent run (Stripe posting) ----
+
+
+def test_selection_accepts_singular_project_kind_from_catalog(sample_jd_text):
+    """load_bank reports kind 'project'; tailor_resume demanded 'projects'.
+
+    A live agent copied the spelling out of the catalog and got a validation
+    error. The tool contradicting its own output is our bug, so both spellings
+    are now accepted and normalised.
+    """
+    server = build_server(SessionStore())
+    catalog = _tool_callable(server, "load_bank")(path=str(BANK))
+    jd = _tool_callable(server, "set_job_description")(raw_text=sample_jd_text)
+
+    project = catalog["projects"][0]
+    assert project["kind"] == "project", "catalog still reports singular"
+
+    result = _tool_callable(server, "tailor_resume")(
+        job_id=jd["job_id"],
+        selection={
+            "sections": [
+                {
+                    "kind": "project",  # the spelling the catalog handed back
+                    "entries": [
+                        {
+                            "entry_id": project["entry_id"],
+                            "bullets": [
+                                {"bullet_id": project["bullets"][0]["bullet_id"]}
+                            ],
+                        }
+                    ],
+                }
+            ]
+        },
+    )
+    assert result["ok"] is True
+    assert any(s["kind"] == "projects" and s["entries"] for s in result["sections"])
+
+
+def test_analyze_fit_accepts_an_entry_id_for_degree_requirements(sample_jd_text):
+    """Education entries have no bullets, so a 'CS degree' requirement had
+    nothing legitimate to cite. entry_id is now a valid citation."""
+    server = build_server(SessionStore())
+    catalog = _tool_callable(server, "load_bank")(path=str(BANK))
+    jd = _tool_callable(server, "set_job_description")(raw_text=sample_jd_text)
+    edu_id = catalog["education"][0]["entry_id"]
+
+    fit = _tool_callable(server, "analyze_fit")(
+        job_id=jd["job_id"],
+        requirements=[
+            {
+                "text": "BS in Computer Science",
+                "category": "must_have",
+                "verdict": "covered",
+                "supporting_bullet_ids": [edu_id],
+            }
+        ],
+    )
+    assert fit["corrections"] == []
+    assert len(fit["covered"]) == 1
+    assert fit["coverage_ratio"] == 1.0
+
+
+def test_set_job_description_reads_a_large_file_itself(tmp_path):
+    """A 175KB scrape blew past the agent's own file-read cap, forcing it to
+    chunk the file by hand. The server absorbs that work now."""
+    big = tmp_path / "posting.html"
+    filler = "<div>" + ("boilerplate locale data " * 4000) + "</div>"
+    big.write_text(
+        f"<html><body>{filler}<p>We need Python and Go.</p></body></html>",
+        encoding="utf-8",
+    )
+    assert big.stat().st_size > 90_000
+
+    server = build_server(SessionStore())
+    info = _tool_callable(server, "set_job_description")(raw_text_path=str(big))
+    assert info["raw_char_count"] > 90_000
+    assert "We need Python and Go." in info["cleaned_text"]
+
+
+def test_set_job_description_requires_some_input():
+    server = build_server(SessionStore())
+    with pytest.raises(ValueError, match="raw_text"):
+        _tool_callable(server, "set_job_description")()
+
+
+def test_catalog_flags_bullet_less_entries_as_citable():
+    """Two live runs reported a false 'CS degree' gap because the education
+    entry has no bullets and nothing said its entry_id was citable."""
+    server = build_server(SessionStore())
+    catalog = _tool_callable(server, "load_bank")(path=str(BANK))
+    edu = catalog["education"][0]
+    assert edu["bullets"] == []
+    assert "note" in edu and "entry_id" in edu["note"]

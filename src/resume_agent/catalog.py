@@ -37,6 +37,15 @@ def _entry_catalog(entry: EntryCommon) -> dict[str, Any]:
             for b in entry.bullets
         ],
     }
+    if not entry.bullets:
+        # Education entries carry their content in degree/gpa/coursework
+        # rather than bullets. Say so explicitly: agents otherwise assume a
+        # bullet-less entry has nothing citable and report a false gap.
+        out["note"] = (
+            "This entry has no bullets; cite its entry_id directly in "
+            "analyze_fit for degree/GPA/coursework requirements."
+        )
+
     for field in ("location", "start", "end", "role", "degree", "gpa", "url"):
         value = getattr(entry, field, None)
         if value:

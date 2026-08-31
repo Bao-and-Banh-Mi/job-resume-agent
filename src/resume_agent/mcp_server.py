@@ -137,18 +137,33 @@ def build_server(store: Optional[SessionStore] = None) -> MCPServer:
         name="set_job_description",
         description=(
             "Capture a job posting. Raw scraped HTML is fine -- it is stripped "
-            "to plain text. Returns the cleaned text plus a job_id. Read the "
-            "cleaned text and decide for yourself what the role requires; the "
-            "server does not extract requirements for you."
+            "to plain text. Pass EITHER raw_text OR raw_text_path; prefer "
+            "raw_text_path for saved page dumps, since a full scrape can be "
+            "100KB+ and reading it into your own context first wastes tokens "
+            "and risks truncation. Returns the cleaned text plus a job_id. "
+            "Read the cleaned text and decide for yourself what the role "
+            "requires; the server does not extract requirements for you."
         ),
     )
     def set_job_description(
-        raw_text: str,
+        raw_text: Optional[str] = None,
+        raw_text_path: Optional[str] = None,
         source_url: Optional[str] = None,
         source_provider: str = "generic",
         org: Optional[str] = None,
         role_title: Optional[str] = None,
     ) -> dict[str, Any]:
+        if raw_text_path:
+            # Let the server do the large read. A live agent run had to
+            # manually chunk a 175KB Next.js dump because its own file-read
+            # tool capped out; that is our problem to absorb, not the
+            # caller's.
+            raw_text = Path(raw_text_path).read_text(
+                encoding="utf-8", errors="ignore"
+            )
+        if not raw_text:
+            raise ValueError("provide either raw_text or raw_text_path")
+
         was_html = looks_like_html(raw_text)
         cleaned = clean_jd_text(raw_text)
         if not cleaned:
@@ -171,6 +186,7 @@ def build_server(store: Optional[SessionStore] = None) -> MCPServer:
             "org": org,
             "role_title": role_title,
             "was_html": was_html,
+            "raw_char_count": len(raw_text),
             "char_count": len(cleaned),
             "cleaned_text": cleaned,
             "next_step": (
@@ -188,6 +204,11 @@ def build_server(store: Optional[SessionStore] = None) -> MCPServer:
             "each needs: text, category (must_have|nice_to_have|responsibility"
             "|skill), verdict (covered|partial|gap), and the "
             "supporting_bullet_ids / supporting_skills backing that verdict. "
+            "supporting_bullet_ids accepts ENTRY ids as well as bullet ids: "
+            "cite the education entry_id (e.g. 'edu-purdue') for degree, GPA, "
+            "coursework, or 'enrolled student' requirements, which have no "
+            "bullets of their own. Do NOT mark a degree requirement as a gap "
+            "just because the education entry has no bullets. "
             "Citations that do not resolve to the bank are stripped, and any "
             "covered/partial verdict left with no evidence is downgraded to a "
             "gap and reported in 'corrections'. Returns flat and must-have-"
