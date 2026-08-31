@@ -159,6 +159,10 @@ class DraftBullet(_Base):
     classification: BulletClassification
     edited_by_user: bool = False
     approved: bool = False
+    # Fraction of the original bullet's words the rewrite touched. 0.0 means
+    # verbatim. Surfaced so a reviewer can see at a glance how much the agent
+    # actually changed rather than diffing by eye.
+    edit_fraction: float = 0.0
 
 
 class DraftEntry(_Base):

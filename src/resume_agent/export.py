@@ -207,57 +207,88 @@ def _all_bullets(draft: Draft):
                 yield section, entry, bullet
 
 
-# Trim order: the agent ranked content by *listing* it, so the last bullet of
-# the least-important section is the safest thing to lose. Education is never
-# trimmed -- it is structural, and it is header-only anyway.
+# Section trim order, least protected first. Education is absent because it
+# is structural and header-only; it is never trimmed.
 _TRIM_PRIORITY = ["leadership", "projects", "experience"]
+
+# Never reduce an entry below this many bullets while any entry anywhere
+# still has more. An entry shown with a single bullet still demonstrates the
+# role; an entry deleted outright loses the role entirely, which is a much
+# bigger loss than one bullet from a longer entry.
+_MIN_BULLETS_PER_ENTRY = 1
 
 
 def _drop_lowest_scoring_bullet(draft: Draft) -> tuple[Draft, str | None]:
     """Remove the single least-important bullet from ``draft``.
 
-    Selection order, least important first:
+    Trimming is *depth-first across all sections*, not section-by-section.
+    An earlier version drained the lowest-priority section to zero before
+    touching the next one, which deleted the entire Leadership and Projects
+    sections while three Experience entries sat untouched at six bullets
+    each. That is the wrong trade: a six-bullet entry can spare its tail
+    without loss, while a deleted entry costs the reader a whole role.
 
-    1. Sections in ``_TRIM_PRIORITY`` order (leadership before experience).
-    2. Within a section, the entry with the *most* bullets, so trimming
-       levels entries out rather than gutting one of them.
-    3. Within that entry, the last bullet -- the agent listed bullets in
-       priority order, so the tail is what it considered least relevant.
+    Selection order:
 
-    An entry is never reduced below one bullet while any other entry still
-    has two, and entries emptied by trimming are pruned. Returns
-    ``(new_draft, dropped_bullet_id)``; the id is ``None`` when nothing can
-    be dropped.
+    1. Consider every entry whose bullet count is above the current maximum
+       floor -- i.e. trim the *longest* entries first, wherever they live.
+    2. Break ties by section priority (leadership before projects before
+       experience), then by entry order, so the choice is deterministic.
+    3. Within the chosen entry, drop the last bullet: the agent lists
+       bullets strongest-first, so the tail is what it valued least.
+
+    Entries are only reduced to zero (and pruned) once every remaining entry
+    is already at ``_MIN_BULLETS_PER_ENTRY``, and only in priority order.
+    Returns ``(new_draft, dropped_bullet_id)``; the id is ``None`` when
+    nothing can be dropped.
     """
     new_draft = draft.model_copy(deep=True)
 
-    by_kind = {s.kind: s for s in new_draft.sections}
-
-    for kind in _TRIM_PRIORITY:
-        section = by_kind.get(kind)
-        if section is None or not section.entries:
+    trimmable: list[tuple[int, int, int, object, object]] = []
+    for section in new_draft.sections:
+        if section.kind == "skills" or section.kind == "education":
             continue
+        try:
+            priority = _TRIM_PRIORITY.index(section.kind)
+        except ValueError:
+            priority = len(_TRIM_PRIORITY)
+        for order, entry in enumerate(section.entries):
+            if entry.bullets:
+                trimmable.append(
+                    (len(entry.bullets), priority, order, section, entry)
+                )
 
-        # Prefer trimming an entry that still has more than one bullet.
-        multi = [e for e in section.entries if len(e.bullets) > 1]
-        pool = multi or [e for e in section.entries if e.bullets]
-        if not pool:
-            continue
+    if not trimmable:
+        return draft, None
 
-        target = max(pool, key=lambda e: (len(e.bullets), e.source_entry_id))
-        victim = target.bullets[-1]
-        dropped_id = victim.draft_bullet_id
-        target.bullets = target.bullets[:-1]
+    deepest = max(t[0] for t in trimmable)
 
-        # Prune entries that lost their last bullet, except in Education
-        # where a header-only entry is still meaningful content.
-        if section.kind != "education":
-            section.entries = [
-                e for e in section.entries if e.bullets or e.kind == "education"
-            ]
-        return new_draft, dropped_id
+    if deepest > _MIN_BULLETS_PER_ENTRY:
+        # Phase 1: shave the longest entries, wherever they are. Ties go to
+        # the least-protected section.
+        pool = [t for t in trimmable if t[0] == deepest]
+        pool.sort(key=lambda t: (-t[1], t[2]))
+        _, _, _, section, entry = pool[0]
+    else:
+        # Phase 2: every entry is at the floor, so further trimming must
+        # sacrifice whole entries. Protect the last entry of each section:
+        # a section that loses its final entry disappears from the resume
+        # entirely, and a missing Experience section is far worse than a
+        # missing bullet. Only when every section is down to a single entry
+        # do we allow a section to be dissolved, least-protected first.
+        multi_entry = [t for t in trimmable if len(t[3].entries) > 1]
+        pool = multi_entry or trimmable
+        pool.sort(key=lambda t: (-t[1], t[2]))
+        _, _, _, section, entry = pool[0]
 
-    return draft, None
+    victim = entry.bullets[-1]
+    dropped_id = victim.draft_bullet_id
+    entry.bullets = entry.bullets[:-1]
+
+    if not entry.bullets:
+        section.entries = [e for e in section.entries if e.bullets]
+
+    return new_draft, dropped_id
 
 
 def export_draft(
@@ -293,7 +324,17 @@ def export_draft(
 
     with tempfile.TemporaryDirectory(prefix="resume-agent-pdflatex-") as tmp:
         tmp_dir = Path(tmp)
-        for iteration in range(_MAX_TRIM_ITERATIONS + 1):
+        # The cap must scale with the draft: a fixed 15 was silently too low
+        # for a large bank, so a 36-bullet draft exhausted the budget at two
+        # pages and exported nothing. Every iteration removes exactly one
+        # bullet, so allowing one pass per bullet (plus headroom) makes the
+        # one-page guarantee hold for any draft that can fit at all.
+        total_bullets = sum(
+            len(e.bullets) for s in draft.sections for e in s.entries
+        )
+        max_iterations = max(_MAX_TRIM_ITERATIONS, total_bullets + 2)
+
+        for iteration in range(max_iterations + 1):
             tex = render_draft(current, template_path)
             iter_dir = tmp_dir / f"iter-{iteration}"
             iter_dir.mkdir(parents=True, exist_ok=True)
@@ -336,7 +377,7 @@ def export_draft(
                     warnings=warnings,
                 )
 
-            if iteration == _MAX_TRIM_ITERATIONS:
+            if iteration == max_iterations:
                 break
 
             new_draft, dropped_id = _drop_lowest_scoring_bullet(current)

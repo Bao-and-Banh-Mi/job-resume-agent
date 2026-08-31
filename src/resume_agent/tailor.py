@@ -28,6 +28,7 @@ import hashlib
 
 from .catalog import bullet_index, entry_index, skill_index
 from .evidence_linker import classify_bullet
+from .prose import check_prose
 from .models import (
     Draft,
     DraftBullet,
@@ -83,11 +84,30 @@ def _build_bullet(
 
     text = rewritten.strip() if rewritten and rewritten.strip() else bullet.text
 
+    # Order matters. The evidence linker runs FIRST and its verdict wins:
+    # fabrication is a factual defect and must be reported as 'unsupported'
+    # rather than being masked by a style complaint about the same edit. A
+    # rewrite that both invents a number and says "leveraged" is an honesty
+    # problem first.
     classification = classify_bullet(
         rewritten_text=text,
         original_bullet_text=bullet.text,
         cited_evidence=cited,
     )
+
+    # The prose gate is the second, independent check: "is this well written,
+    # and is it a tailoring edit rather than a restatement?". A rewrite that
+    # keeps every fact but arrives draped in "leveraged" and "seamlessly"
+    # passes the linker -- and is exactly what makes a resume read as
+    # generated. Only evaluated for factually-sound rewrites, so the error
+    # the agent sees is always the most serious one.
+    prose_verdict = None
+    if rewritten and text != bullet.text and classification.label != "unsupported":
+        prose_verdict = check_prose(original=bullet.text, rewritten=text)
+        if not prose_verdict.ok:
+            raise SelectionError(
+                f"bullet {bullet.bullet_id}: {prose_verdict.reason}"
+            )
 
     if classification.label in ("verbatim", "paraphrased"):
         approved = True
@@ -106,6 +126,7 @@ def _build_bullet(
         classification=classification,
         edited_by_user=bool(rewritten),
         approved=approved,
+        edit_fraction=prose_verdict.edit_fraction if prose_verdict else 0.0,
     )
 
 

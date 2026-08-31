@@ -185,10 +185,20 @@ def test_rephrase_inventing_a_company_is_unsupported(example_bank):
 
 
 def test_faithful_rephrase_is_allowed(example_bank):
+    """A small, deliberate vocabulary swap -- the intended tailoring edit.
+
+    Note this is NOT a word-scramble: the prose gate now rejects wholesale
+    restatement even when every fact survives, because that destroys the
+    candidate's voice. Tailoring means touching a few words.
+    """
     original = example_bank.experiences[0].bullets[0].text
-    # Reorder the original's own words: no new facts, so this must pass.
-    words = original.rstrip(".").split()
-    reworded = " ".join(words[2:] + words[:2]) + "."
+    words = original.split()
+    target = next((w for w in words if len(w) > 6 and w.isalpha()), None)
+    assert target, "fixture bullet has no swappable word"
+    reworded = original.replace(target, target, 1)  # identity-safe baseline
+    reworded = original.replace(" and ", " and, in production, ", 1) \
+        if " and " in original else original[:-1] + " in production."
+
     draft = tailor_from_selection(
         example_bank, _jd(), _sel(_one_bullet_selection(example_bank, reworded))
     )
@@ -196,15 +206,41 @@ def test_faithful_rephrase_is_allowed(example_bank):
     assert bullet.classification.label in ("verbatim", "paraphrased")
     assert bullet.approved is True
     assert bullet.edited_by_user is True
+    assert 0 < bullet.edit_fraction <= 0.35
 
 
 def test_inferred_needs_accept_inferred(example_bank):
-    sel = _one_bullet_selection(example_bank, "Did some engineering work.")
+    """An 'inferred' rewrite needs explicit human approval to export.
+
+    The rewrite must still pass the prose gate, so it is built as a bounded
+    edit of the original rather than an unrelated sentence.
+    """
+    original = example_bank.experiences[0].bullets[0].text
+    from resume_agent.evidence_linker import classify_bullet
+    from resume_agent.prose import check_prose
+
+    candidate = None
+    words = original.rstrip(".").split()
+    # Drop trailing detail until the linker calls it 'inferred' while the
+    # prose gate still accepts the edit size.
+    for cut in range(1, max(len(words) - 3, 2)):
+        trial = " ".join(words[:-cut]) + "."
+        if not check_prose(original=original, rewritten=trial).ok:
+            continue
+        label = classify_bullet(
+            rewritten_text=trial,
+            original_bullet_text=original,
+            cited_evidence=[],
+        ).label
+        if label == "inferred":
+            candidate = trial
+            break
+    if candidate is None:
+        pytest.skip("no bounded edit of this fixture yields 'inferred'")
+
+    sel = _one_bullet_selection(example_bank, candidate)
     draft = tailor_from_selection(example_bank, _jd(), _sel(sel))
-    bullet = _experience_bullet(draft)
-    if bullet.classification.label != "inferred":
-        pytest.skip("bank bullet did not produce an 'inferred' classification")
-    assert bullet.approved is False
+    assert _experience_bullet(draft).approved is False
 
     sel["accept_inferred"] = True
     draft2 = tailor_from_selection(example_bank, _jd(), _sel(sel))

@@ -165,3 +165,87 @@ def test_sparse_resume_is_warned_about(tmp_path, example_bank, template_path):
     assert result.exported is True
     assert result.fill_ratio < 0.75
     assert any("fills only" in w for w in result.warnings)
+
+
+# --- one-page guarantee under a large bank --------------------------------
+
+
+def _inflate(bank, copies=2):
+    """Return a deep-copied bank with each entry's bullets multiplied."""
+    import copy as _copy
+
+    big = bank.model_copy(deep=True)
+    for entries in (big.experiences, big.projects, big.leadership):
+        for entry in entries:
+            base = list(entry.bullets)
+            for i in range(copies):
+                for b in base:
+                    nb = _copy.deepcopy(b)
+                    nb.bullet_id = f"{b.bullet_id}-x{i}"
+                    entry.bullets.append(nb)
+    return big
+
+
+def _select_everything(bank):
+    sections = []
+    for kind, entries in (
+        ("experience", bank.experiences),
+        ("projects", bank.projects),
+        ("leadership", bank.leadership),
+        ("education", bank.education),
+    ):
+        if entries:
+            sections.append(
+                {
+                    "kind": kind,
+                    "entries": [
+                        {
+                            "entry_id": e.entry_id,
+                            "bullets": [{"bullet_id": b.bullet_id} for b in e.bullets],
+                        }
+                        for e in entries
+                    ],
+                }
+            )
+    return {"sections": sections}
+
+
+def test_trimming_spreads_loss_instead_of_deleting_sections(example_bank):
+    """Regression: the old trimmer drained low-priority sections to zero.
+
+    It deleted all of Leadership and Projects while three Experience entries
+    sat untouched at six bullets each. Losing a whole role costs the reader
+    far more than losing one bullet from a long entry.
+    """
+    from resume_agent.export import _drop_lowest_scoring_bullet
+
+    big = _inflate(example_bank)
+    draft = _draft(big, _select_everything(big))
+
+    for _ in range(20):
+        draft, dropped = _drop_lowest_scoring_bullet(draft)
+        if dropped is None:
+            break
+
+    kinds = {s.kind for s in draft.sections if s.entries}
+    for required in ("experience", "projects", "leadership"):
+        assert required in kinds, f"{required} was deleted rather than trimmed"
+
+
+@pytest.mark.skipif(shutil.which("pdflatex") is None, reason="pdflatex not on PATH")
+def test_large_bank_still_fits_one_page(tmp_path, example_bank, template_path):
+    """A 3x bank previously exhausted the fixed 15-iteration cap at two pages
+    and exported nothing at all. One page must be a guarantee, not a hope."""
+    big = _inflate(example_bank)
+    draft = _draft(big, _select_everything(big))
+    total = sum(len(e.bullets) for s in draft.sections for e in s.entries)
+    assert total > 15, "fixture must exceed the old iteration cap"
+
+    result = export_draft(draft, output_dir=tmp_path, template_path=template_path)
+
+    assert result.exported is True, result.warnings
+    assert result.page_count == 1
+    assert result.dropped_bullet_ids
+    # Every section must survive the trim.
+    for heading in ("Education", "Experience", "Leadership", "Skills"):
+        assert f"\\section{{{heading}}}" in result.tex

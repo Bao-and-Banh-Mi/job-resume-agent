@@ -76,6 +76,19 @@ Rules you must follow:
   * Rephrasing must preserve every number and proper noun in the original
     bullet. You may re-frame emphasis; you may not add facts. The evidence
     linker will catch violations and block the export.
+  * TAILOR, DON'T REWRITE. A rewritten bullet may change at most ~35% of the
+    original's words. Swap a term or two so the posting's vocabulary appears
+    verbatim ("backend services" where the bank says "workflows"); keep the
+    candidate's own phrasing, structure, and metrics. Restating a bullet in
+    your own register is rejected even when every fact survives -- it strips
+    the candidate's voice and makes every entry sound identical.
+  * NO SLOP. Never introduce "leveraged", "spearheaded", "utilized",
+    "robust", "scalable", "seamless", "cutting-edge", "passionate", or
+    similar filler. Never use first person. Lead with a concrete action
+    verb, not "Responsible for" or "Helped". These are rejected with the
+    offending word named, so fix and retry.
+  * Most bullets need NO rewrite at all. Leave a bullet verbatim unless
+    there is a specific term in the posting it should echo.
   * Order matters: list entries and bullets strongest-first, because
     one-page trimming removes from the tail.
   * FILL THE PAGE. One page is a ceiling, not a target. With a typical
@@ -238,9 +251,13 @@ def build_server(store: Optional[SessionStore] = None) -> MCPServer:
             "rewritten_text?}]}]}), optional skills (list of {group, skills}), "
             "accept_inferred, and rationale. List strongest content first -- "
             "one-page trimming drops from the tail. rewritten_text lets you "
-            "align wording with the posting, but it is checked against the "
-            "original bullet's evidence: new numbers or new proper nouns are "
-            "labelled 'unsupported' and will block export. Unknown ids are "
+            "align wording with the posting, but it is checked twice: the "
+            "evidence linker rejects new numbers/proper nouns, and a prose "
+            "gate rejects generated-sounding filler ('leveraged', 'robust', "
+            "'seamless'), first person, weak openers, padding, and any "
+            "rewrite touching more than ~35% of the original's words. Prefer "
+            "leaving bullets verbatim; rewrite only to echo a specific term "
+            "from the posting. Unknown ids are "
             "errors. Education is always included. The 'skills' field only "
             "sets EMPHASIS ORDER -- every bank skill is listed regardless, "
             "since all of them are evidence-backed and omitting them just "
