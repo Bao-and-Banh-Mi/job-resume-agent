@@ -53,3 +53,34 @@ def test_paraphrase_within_evidence_stays_supported():
     assert c.label in {"verbatim", "paraphrased"}
     assert c.new_numeric_tokens == []
     assert c.new_named_entities == []
+
+
+def test_sentence_position_shift_is_not_a_fabricated_entity():
+    """Regression: reordering a bullet must not read as inventing a noun.
+
+    The entity heuristic keys off capitalisation, so "Built X for Y" ->
+    "For Y, built X" previously flagged "Built" as a brand-new proper noun
+    and blocked an edit that invented nothing. This is the single most
+    common shape of agent rephrasing, so it must pass.
+    """
+    original = "Built a RAG pipeline for the Slack bot."
+    ev = EvidenceItem(evidence_id="ev-1", body=original)
+    c = classify_bullet(
+        rewritten_text="For the Slack bot, built a RAG pipeline.",
+        original_bullet_text=original,
+        cited_evidence=[ev],
+    )
+    assert c.new_named_entities == []
+    assert c.label in {"verbatim", "paraphrased"}
+
+
+def test_genuinely_new_proper_noun_is_still_caught():
+    original = "Built a RAG pipeline for the Slack bot."
+    ev = EvidenceItem(evidence_id="ev-1", body=original)
+    c = classify_bullet(
+        rewritten_text="Built a RAG pipeline for the Datadog integration.",
+        original_bullet_text=original,
+        cited_evidence=[ev],
+    )
+    assert "Datadog" in c.new_named_entities
+    assert c.label == "unsupported"

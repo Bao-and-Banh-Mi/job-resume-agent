@@ -159,10 +159,6 @@ class DraftBullet(_Base):
     classification: BulletClassification
     edited_by_user: bool = False
     approved: bool = False
-    # Number of JD keywords matched by this bullet in the bank; threaded from
-    # the retriever so downstream trimming (export.py's one-page gate) can rank
-    # bullets globally without recomputing keyword matching.
-    match_score: int = 0
 
 
 class DraftEntry(_Base):
@@ -195,13 +191,6 @@ class Gap(_Base):
     ] = "no_matching_evidence"
 
 
-class KeywordCoverage(_Base):
-    jd_keywords: list[str]
-    matched: list[dict] = Field(default_factory=list)
-    unmatched: list[str] = Field(default_factory=list)
-    coverage_ratio: float = 0.0
-
-
 class Draft(_Base):
     draft_id: str
     job_id: str
@@ -213,7 +202,86 @@ class Draft(_Base):
     owner: Owner
     sections: list[DraftSection] = Field(default_factory=list)
     gaps: list[Gap] = Field(default_factory=list)
-    keyword_coverage: KeywordCoverage
+
+
+Verdict = Literal["covered", "partial", "gap"]
+
+
+class AssessedRequirement(_Base):
+    """One requirement, as read out of the posting *by the calling agent*.
+
+    The agent supplies ``text`` (a requirement it identified in the JD) plus
+    the bank ids it believes support that requirement. The server does not
+    trust the verdict: it re-checks that every cited id exists, and downgrades
+    any ``covered``/``partial`` claim that cites nothing. That check is what
+    keeps a confident model from inflating its own coverage number.
+    """
+
+    text: str
+    category: RequirementCategory = "skill"
+    verdict: Verdict = "gap"
+    supporting_bullet_ids: list[str] = Field(default_factory=list)
+    supporting_skills: list[str] = Field(default_factory=list)
+    note: str = ""
+
+
+class FitReport(_Base):
+    """Validated output of ``analyze_fit``."""
+
+    job_id: str
+    total_requirements: int
+    covered: list[AssessedRequirement] = Field(default_factory=list)
+    partial: list[AssessedRequirement] = Field(default_factory=list)
+    gaps: list[AssessedRequirement] = Field(default_factory=list)
+    coverage_ratio: float = 0.0
+    weighted_coverage: float = 0.0
+    must_have_gaps: list[str] = Field(default_factory=list)
+    corrections: list[str] = Field(default_factory=list)
+    recommendation: str = ""
+
+
+class SelectedBullet(_Base):
+    """A bullet the agent chose to include.
+
+    ``rewritten_text`` is optional. When present it is *checked against the
+    original bullet and its evidence* by the linker before it can be
+    exported, so rephrasing for a posting's vocabulary is allowed but
+    inventing facts is not.
+    """
+
+    bullet_id: str
+    rewritten_text: Optional[str] = None
+
+
+class SelectedEntry(_Base):
+    entry_id: str
+    bullets: list[SelectedBullet] = Field(default_factory=list)
+
+
+class SelectedSection(_Base):
+    kind: Literal["education", "experience", "projects", "leadership"]
+    entries: list[SelectedEntry] = Field(default_factory=list)
+
+
+class SelectedSkillGroup(_Base):
+    group: str
+    skills: list[str] = Field(default_factory=list)
+
+
+class ResumeSelection(_Base):
+    """The agent's editorial decision, handed to ``tailor_resume``.
+
+    Everything here is a *reference* into the loaded bank. There is no field
+    through which free-form resume content can enter, except
+    ``SelectedBullet.rewritten_text``, which is gated by the evidence linker.
+    """
+
+    sections: list[SelectedSection] = Field(default_factory=list)
+    skills: list[SelectedSkillGroup] = Field(default_factory=list)
+    # Set true only when a human has reviewed rephrasings the linker judged
+    # 'inferred'. Unsupported bullets can never be approved this way.
+    accept_inferred: bool = False
+    rationale: str = ""
 
 
 class RequirementMatch(_Base):

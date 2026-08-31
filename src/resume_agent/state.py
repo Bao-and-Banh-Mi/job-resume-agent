@@ -12,7 +12,7 @@ import hashlib
 import threading
 from typing import Optional
 
-from .models import Draft, ExperienceBank, JobDescription
+from .models import Draft, ExperienceBank, FitReport, JobDescription
 
 
 class SessionStore:
@@ -22,6 +22,7 @@ class SessionStore:
         self._bank_path: Optional[str] = None
         self._jobs: dict[str, JobDescription] = {}
         self._drafts: dict[str, Draft] = {}
+        self._fits: dict[str, FitReport] = {}
         self._active_job_id: Optional[str] = None
 
     # --- bank ---------------------------------------------------------------
@@ -65,6 +66,16 @@ class SessionStore:
     def active_job_id(self) -> Optional[str]:
         with self._lock:
             return self._active_job_id
+
+    # --- fit reports --------------------------------------------------------
+
+    def put_fit(self, job_id: str, report: FitReport) -> None:
+        with self._lock:
+            self._fits[job_id] = report
+
+    def get_fit(self, job_id: str) -> Optional[FitReport]:
+        with self._lock:
+            return self._fits.get(job_id)
 
     # --- drafts -------------------------------------------------------------
 

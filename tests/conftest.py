@@ -31,3 +31,30 @@ def sample_jd_text() -> str:
         "PyTorch, FastAPI, Docker, and experience with LLMs and agents. Nice to have: "
         "quantum computing, PennyLane, and federated learning with Flower."
     )
+
+
+@pytest.fixture()
+def full_selection(example_bank: ExperienceBank) -> dict:
+    """A selection covering every entry and bullet in the example bank."""
+    sections = []
+    for kind, entries in (
+        ("experience", example_bank.experiences),
+        ("projects", example_bank.projects),
+        ("leadership", example_bank.leadership),
+        ("education", example_bank.education),
+    ):
+        if not entries:
+            continue
+        sections.append(
+            {
+                "kind": kind,
+                "entries": [
+                    {
+                        "entry_id": e.entry_id,
+                        "bullets": [{"bullet_id": b.bullet_id} for b in e.bullets],
+                    }
+                    for e in entries
+                ],
+            }
+        )
+    return {"sections": sections, "rationale": "test: everything"}

@@ -3,7 +3,7 @@
 Beyond the evidence/approval gate, this module enforces a *real* one-page
 constraint: it compiles the rendered ``.tex`` with ``pdflatex`` in a sandbox
 directory, checks the resulting page count, and if the draft overflows,
-trims the single lowest ``match_score`` bullet (pure removal -- wording is
+trims the least-important trailing bullet (pure removal -- wording is
 never touched) and recompiles. This repeats until the draft fits one page,
 bullets are exhausted, or an iteration cap is hit.
 
@@ -35,6 +35,7 @@ class ExportResult:
     tex: str
     exported: bool = True
     page_count: int | None = None
+    pdf_path: str = ""
     dropped_bullet_ids: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
 
@@ -142,34 +143,57 @@ def _all_bullets(draft: Draft):
                 yield section, entry, bullet
 
 
+# Trim order: the agent ranked content by *listing* it, so the last bullet of
+# the least-important section is the safest thing to lose. Education is never
+# trimmed -- it is structural, and it is header-only anyway.
+_TRIM_PRIORITY = ["leadership", "projects", "experience"]
+
+
 def _drop_lowest_scoring_bullet(draft: Draft) -> tuple[Draft, str | None]:
-    """Return a copy of ``draft`` with its single lowest-``match_score`` bullet
-    removed. Empty entries left behind are pruned; sections left with no
-    entries/skill_groups are pruned by the renderer, not here (renderer
-    already skips empty sections).
+    """Remove the single least-important bullet from ``draft``.
 
-    Returns ``(new_draft, dropped_bullet_id)``; ``dropped_bullet_id`` is
-    ``None`` if there was nothing left to drop.
+    Selection order, least important first:
+
+    1. Sections in ``_TRIM_PRIORITY`` order (leadership before experience).
+    2. Within a section, the entry with the *most* bullets, so trimming
+       levels entries out rather than gutting one of them.
+    3. Within that entry, the last bullet -- the agent listed bullets in
+       priority order, so the tail is what it considered least relevant.
+
+    An entry is never reduced below one bullet while any other entry still
+    has two, and entries emptied by trimming are pruned. Returns
+    ``(new_draft, dropped_bullet_id)``; the id is ``None`` when nothing can
+    be dropped.
     """
-    candidates = list(_all_bullets(draft))
-    if not candidates:
-        return draft, None
-
-    # Lowest score first; ties broken by draft_bullet_id for determinism.
-    _, _, victim = min(
-        candidates, key=lambda t: (t[2].match_score, t[2].draft_bullet_id)
-    )
-    dropped_id = victim.draft_bullet_id
-
     new_draft = draft.model_copy(deep=True)
-    for section in new_draft.sections:
-        for entry in section.entries:
-            entry.bullets = [
-                b for b in entry.bullets if b.draft_bullet_id != dropped_id
+
+    by_kind = {s.kind: s for s in new_draft.sections}
+
+    for kind in _TRIM_PRIORITY:
+        section = by_kind.get(kind)
+        if section is None or not section.entries:
+            continue
+
+        # Prefer trimming an entry that still has more than one bullet.
+        multi = [e for e in section.entries if len(e.bullets) > 1]
+        pool = multi or [e for e in section.entries if e.bullets]
+        if not pool:
+            continue
+
+        target = max(pool, key=lambda e: (len(e.bullets), e.source_entry_id))
+        victim = target.bullets[-1]
+        dropped_id = victim.draft_bullet_id
+        target.bullets = target.bullets[:-1]
+
+        # Prune entries that lost their last bullet, except in Education
+        # where a header-only entry is still meaningful content.
+        if section.kind != "education":
+            section.entries = [
+                e for e in section.entries if e.bullets or e.kind == "education"
             ]
-        # Drop entries that lost their last bullet (no content left to show).
-        section.entries = [e for e in section.entries if e.bullets]
-    return new_draft, dropped_id
+        return new_draft, dropped_id
+
+    return draft, None
 
 
 def export_draft(
@@ -220,15 +244,21 @@ def export_draft(
             if page_count <= 1:
                 tex_path = output_dir / f"{draft.draft_id}.tex"
                 tex_path.write_text(tex, encoding="utf-8")
+                # Keep the PDF we just verified, rather than recompiling
+                # outside the sandbox and hoping for the same result.
+                pdf_src = iter_dir / "draft.pdf"
+                pdf_dest = output_dir / f"{draft.draft_id}.pdf"
+                shutil.copyfile(pdf_src, pdf_dest)
                 if dropped:
                     warnings.append(
-                        f"trimmed {len(dropped)} lowest-scoring bullet(s) to fit one page"
+                        f"trimmed {len(dropped)} lowest-priority bullet(s) to fit one page"
                     )
                 return ExportResult(
                     tex_path=str(tex_path),
                     tex=tex,
                     exported=True,
                     page_count=page_count,
+                    pdf_path=str(pdf_dest),
                     dropped_bullet_ids=dropped,
                     warnings=warnings,
                 )

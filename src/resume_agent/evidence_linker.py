@@ -14,7 +14,14 @@ The classifier is intentionally simple and testable:
 
 "New" is defined against the union of all cited evidence bodies plus the
 original bank bullet text (which is itself a first-class evidence anchor by
-the data model's invariant).
+the data model's invariant), and is compared case-insensitively so that
+moving a word away from the start of a sentence does not read as a
+fabricated proper noun.
+
+This classifier is what makes agent rephrasing safe. The calling LLM is
+free to re-frame a bullet for a posting's vocabulary; if the result asserts
+a number or a proper noun the evidence does not contain, it is labelled
+``unsupported`` and the export gate refuses it.
 """
 
 from __future__ import annotations
@@ -63,6 +70,29 @@ def _combined_evidence_text(
     return "\n".join([original_bullet_text, *(e.body for e in evidence)])
 
 
+def _new_entities(bullet_text: str, evidence_text: str) -> list[str]:
+    """Entities in ``bullet_text`` that do not occur in ``evidence_text``.
+
+    Comparison is case-insensitive on purpose. The entity heuristic keys off
+    capitalisation, so a word's *casing* changes with its sentence position:
+    rephrasing "Built X for Y" into "For Y, built X" makes "Built" look like
+    a brand-new proper noun and would block an edit that invented nothing.
+    Matching case-insensitively against the evidence removes that false
+    positive while still catching genuinely new names -- "Datadog" does not
+    appear in the evidence in any casing.
+    """
+    evidence_lower = {e.lower() for e in _named_entities(evidence_text)}
+    # Also allow any word present in the evidence at all, regardless of the
+    # entity heuristic's opinion about it (handles casing shifts on ordinary
+    # words that happen to start a sentence).
+    evidence_words = set(content_token_set(evidence_text))
+    return sorted(
+        e
+        for e in _named_entities(bullet_text)
+        if e.lower() not in evidence_lower and e.lower() not in evidence_words
+    )
+
+
 def classify_bullet(
     *,
     rewritten_text: str,
@@ -79,9 +109,7 @@ def classify_bullet(
     evidence_numbers = _numeric_tokens(combined)
     new_numbers = sorted(bullet_numbers - evidence_numbers)
 
-    bullet_entities = _named_entities(rewritten_text)
-    evidence_entities = _named_entities(combined)
-    new_entities = sorted(bullet_entities - evidence_entities)
+    new_entities = _new_entities(rewritten_text, combined)
 
     if bullet_tokens:
         overlap_ratio = (
